@@ -1,8 +1,14 @@
-FROM python:3.10-slim
+FROM python:3.9-slim
+
 WORKDIR /app
+
 RUN apt-get update && apt-get install -y git
 COPY requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
-CMD ["fastmcp", "run", "server.py"]
+
+ENV RUNNING_IN_DOCKER=true
+ENV PYTHONUNBUFFERED=1
+
+CMD ["python", "server.py"]
