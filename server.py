@@ -30,8 +30,13 @@ conn.close()
 
 class PracticalGraphServer:
     def __init__(self):
-        self.config_loader = ConfigLoader('/path/to/config.json')
+        self.config_loader = ConfigLoader()  # Let it auto-detect config
         self.config = self.config_loader.load_config()
+        
+        if not self.config:
+            logger.error("Failed to load configuration")
+            raise ValueError("No valid configuration found")
+            
         self.watchdog = WatchdogService(self.config, update_callback=self._on_files_changed)
         self.mcp = FastMCP('practical-graph')
         self.version = 0
