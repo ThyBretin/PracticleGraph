@@ -1,0 +1,17 @@
+{
+  "folder_groups": {
+    "core": ["navigation", "state", "auth"],
+    "features": ["event", "discovery", "profile"],
+    "api": ["endpoints"],
+    "lib": ["utilities"]
+  },
+  "docs": {
+    "business": "docs/business-rules.md",
+    "architecture": "docs/architecture.md"
+  },
+  "watchdog": {
+    "debounce_interval": 3,
+    "batch_size": 20,
+    "min_change_threshold": 5
+  }
+}
