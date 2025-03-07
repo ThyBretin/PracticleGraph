@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger("PracticalGraph")
 app_path = os.getenv("APP_PATH", "/project")
-practicle_cache = {}  # Moved here
+particule_cache = {}  # Moved here
 
 def load_gitignore_patterns(base_path: str) -> dict:
     patterns = {}
@@ -37,11 +37,11 @@ def infer_file_type(file_path: Path) -> str:
         return "state"
     return "file"
 
-def extract_practicle_logic(file_path: Path) -> str:
+def extract_particule_logic(file_path: Path) -> str:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
-            match = re.search(r'export\s+const\s+Practicle\s*=\s*["\'](.+?)["\']', content)
+            match = re.search(r'export\s+const\s+ContextParticule\s*=\s*["\'](.+?)["\']', content)
             return match.group(1).strip() if match else None
     except Exception:
         return None

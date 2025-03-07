@@ -1,13 +1,13 @@
 import os
 from fastmcp import FastMCP
 import logging
-from practicle_utils import app_path
-from createPracticle import createPracticle
-from showPracticle import showPracticle
-from listPracticle import listPracticle
-from updatePracticle import updatePracticle
-from exportPracticle import exportPracticle
-from deletePracticle import deletePracticle
+from particule_utils import app_path
+from createParticule import createParticule
+from loadParticule import loadParticule
+from listParticule import listParticule
+from updateParticule import updateParticule
+from exportParticule import exportParticule
+from deleteParticule import deleteParticule
 from list_dir import list_dir
 from check_root import check_root
 
@@ -16,12 +16,12 @@ logger = logging.getLogger("PracticalGraph")
 
 def main():
     mcp = FastMCP("practical-graph")
-    mcp.tool()(createPracticle)
-    mcp.tool()(showPracticle)
-    mcp.tool()(listPracticle)
-    mcp.tool()(updatePracticle)
-    mcp.tool()(exportPracticle)
-    mcp.tool()(deletePracticle)
+    mcp.tool()(createParticule)
+    mcp.tool()(loadParticule)
+    mcp.tool()(listParticule)
+    mcp.tool()(updateParticule)
+    mcp.tool()(exportParticule)
+    mcp.tool()(deleteParticule)
     mcp.tool()(list_dir)
     mcp.tool()(check_root)
     logger.info("Server initialized, entering main loop")

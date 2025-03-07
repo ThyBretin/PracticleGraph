@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from practicle_utils import app_path, logger
+from particule_utils import app_path, logger
 
 # Configurable tech categories (unchanged)
 TECH_CATEGORIES = {

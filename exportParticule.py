@@ -1,26 +1,26 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from practicle_utils import app_path, logger, practicle_cache
-from createPracticle import createPracticle
+from particule_utils import app_path, logger, particule_cache
+from createParticule import createParticule
 
-def exportPracticle(feature: str) -> str:
+def exportParticule(feature: str) -> str:
     feature = feature.lower()  # Case-insensitive
-    if feature not in practicle_cache:
+    if feature not in particule_cache:
         logger.info(f"No cached manifest for {feature}, creating it")
         feature_path = f"components/Features/{feature.capitalize()}"  # Guess path
         if "core" in feature.lower():  # Handle Core features
             feature_path = f"components/Core/{feature.capitalize()}"
-        practicle_cache[feature] = createPracticle(feature_path)
+        particule_cache[feature] = createParticule(feature_path)
     
-    manifest = practicle_cache[feature]
+    manifest = particule_cache[feature]
     if "error" in manifest:
         return f"Cannot export: {manifest['error']}"
     
-    practicles_dir = Path(app_path) / "practicles"
-    practicles_dir.mkdir(exist_ok=True)
+    particules_dir = Path(app_path) / "Particules"
+    particules_dir.mkdir(exist_ok=True)
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-    save_path = practicles_dir / f"{feature}_{timestamp}.json"
+    save_path = particules_dir / f"{feature}_{timestamp}.json"
     try:
         with open(save_path, "w") as f:
             json.dump(manifest, f, indent=2)

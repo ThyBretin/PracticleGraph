@@ -15,7 +15,7 @@ If you need a new Particule, you can use the createParticule("components/Core/Na
 
 This will create a new Particule file for the Navigation feature that the AI can use to have a context of the feature you are working on.
 You can export the Particule file with the exportParticule("Navigation") tool.
-You can show the Particule file with the showParticule("Navigation") tool.
+You can show the Particule file with the loadParticule("Navigation") tool.
 You can update the Particule file with the updateParticule("Navigation") tool.
 You can delete the Particule file with the deleteParticule("Navigation") tool.
 You can list all Particule files with the listParticule() tool.

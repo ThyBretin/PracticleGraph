@@ -3,13 +3,13 @@ import os
 import fnmatch
 from datetime import datetime
 from pathlib import Path
-from practicle_utils import (
-    app_path, logger, practicle_cache, load_gitignore_patterns, infer_file_type,
-    extract_practicle_logic, extract_api_calls
+from particule_utils import (
+    app_path, logger, particule_cache, load_gitignore_patterns, infer_file_type,
+    extract_particule_logic, extract_api_calls
 )
 from tech_stack import get_tech_stack  # New import
 
-def createPracticle(feature_path: str) -> dict:
+def createParticule(feature_path: str) -> dict:
     primary_entities = []
     shared_entities = []
     gitignore_patterns = load_gitignore_patterns(app_path)
@@ -45,7 +45,7 @@ def createPracticle(feature_path: str) -> dict:
                     entity = {
                         "path": entry_rel_path,
                         "type": infer_file_type(entry),
-                        "context": extract_practicle_logic(entry),
+                        "context": extract_particule_logic(entry),
                         "calls": extract_api_calls(entry)
                     }
                     entity = {k: v for k, v in entity.items() if v is not None and v != []}
@@ -71,6 +71,6 @@ def createPracticle(feature_path: str) -> dict:
         "tech_stack": get_tech_stack(all_entities),
         "files": {"primary": primary_entities, "shared": shared_entities}
     }
-    practicle_cache[manifest["feature"]] = manifest
+    particule_cache[manifest["feature"]] = manifest
     logger.info(f"Created manifest for {manifest['feature']}")
     return manifest
