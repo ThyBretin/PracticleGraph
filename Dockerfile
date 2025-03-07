@@ -1,14 +1,6 @@
-FROM python:3.9-slim
-
+FROM python:3.10-slim
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y git
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-ENV RUNNING_IN_DOCKER=true
-ENV PYTHONUNBUFFERED=1
-
+COPY server.py practicle_utils.py createPracticle.py showPracticle.py listPracticle.py updatePracticle.py exportPracticle.py deletePracticle.py list_dir.py check_root.py tech_stack.py ./
+RUN pip install fastmcp
+EXPOSE 8000
 CMD ["python", "server.py"]

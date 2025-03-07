@@ -1,4 +1,5 @@
 {
+  "app_path": "/app",
   "folder_groups": {
     "core": ["navigation", "state", "auth"],
     "features": ["event", "discovery", "profile"],
