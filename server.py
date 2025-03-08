@@ -1,4 +1,3 @@
-import os
 from fastmcp import FastMCP
 import logging
 from particule_utils import app_path
@@ -7,25 +6,26 @@ from loadParticule import loadParticule
 from listParticule import listParticule
 from updateParticule import updateParticule
 from exportParticule import exportParticule
-from deleteParticule import deleteParticule
+from addContext import addContext, addContextAdvanced  # Updated imports
 from list_dir import list_dir
 from check_root import check_root
 
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger("PracticalGraph")
+logger = logging.getLogger("ParticuleGraph")
 
 def main():
-    mcp = FastMCP("practical-graph")
+    mcp = FastMCP("particule-graph")
     mcp.tool()(createParticule)
     mcp.tool()(loadParticule)
     mcp.tool()(listParticule)
     mcp.tool()(updateParticule)
     mcp.tool()(exportParticule)
-    mcp.tool()(deleteParticule)
+    mcp.tool()(addContext)          # Standard with defaults
+    mcp.tool()(addContextAdvanced)  # Advanced with types and extras
     mcp.tool()(list_dir)
     mcp.tool()(check_root)
     logger.info("Server initialized, entering main loop")
-    mcp.run()  # Keeps it alive
+    mcp.run()
 
 if __name__ == "__main__":
     try:

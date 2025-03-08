@@ -5,7 +5,7 @@ import os
 import logging
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("PracticalGraph")
+logger = logging.getLogger("ParticuleGraph")
 
 # SQLite setup
 conn = sqlite3.connect("/tmp/graph.db")
@@ -21,7 +21,7 @@ conn.commit()
 conn.close()
 
 # MCP Server
-mcp = FastMCP("practical-graph")
+mcp = FastMCP("particule-graph")
 
 @mcp.tool()
 def get_context() -> dict:
@@ -87,5 +87,5 @@ def get_context() -> dict:
     return {"entities": entities}
 
 if __name__ == "__main__":
-    logger.info("Starting PracticalGraph server")
+    logger.info("Starting ParticuleGraph server")
     mcp.run()

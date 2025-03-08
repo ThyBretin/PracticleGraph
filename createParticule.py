@@ -5,9 +5,9 @@ from datetime import datetime
 from pathlib import Path
 from particule_utils import (
     app_path, logger, particule_cache, load_gitignore_patterns, infer_file_type,
-    extract_particule_logic, extract_api_calls
+    extract_particule_logic
 )
-from tech_stack import get_tech_stack  # New import
+from tech_stack import get_tech_stack
 
 def createParticule(feature_path: str) -> dict:
     primary_entities = []
@@ -42,12 +42,14 @@ def createParticule(feature_path: str) -> dict:
                 if entry.is_dir():
                     crawl_tree(entry, depth + 1)
                 elif entry.is_file() and not entry.name.startswith("."):
+                    context = extract_particule_logic(entry_rel_path)
                     entity = {
                         "path": entry_rel_path,
-                        "type": infer_file_type(entry),
-                        "context": extract_particule_logic(entry),
-                        "calls": extract_api_calls(entry)
+                        "type": infer_file_type(entry_rel_path),
                     }
+                    if context:
+                        entity["context"] = context
+                    # Filter out empty values
                     entity = {k: v for k, v in entity.items() if v is not None and v != []}
                     if is_shared:
                         shared_entities.append(entity)

@@ -1,102 +1,81 @@
-import os
-from pathlib import Path
-import fnmatch
-import re
+import json
 import logging
+import os
+import re
+from pathlib import Path
+from typing import Dict, List, Set
 
-logger = logging.getLogger("PracticalGraph")
-app_path = os.getenv("APP_PATH", "/project")
-particule_cache = {}  # Moved here
+app_path = os.getenv("PARTICULE_PATH", "/project")
+particule_cache: Dict[str, dict] = {}
+logger = logging.getLogger("ParticuleGraph")
 
-def load_gitignore_patterns(base_path: str) -> dict:
-    patterns = {}
-    base_path = str(Path(base_path).resolve())
-    gitignore_path = os.path.join(base_path, ".gitignore")
-    if os.path.exists(gitignore_path):
-        try:
-            with open(gitignore_path, "r") as f:
-                ignores = {line.strip().strip("/") for line in f if line.strip() and not line.startswith("#")}
-            patterns[base_path] = ignores
-            logger.debug(f"Loaded from {gitignore_path}: {ignores}")
-        except Exception as e:
-            logger.error(f"Error reading {gitignore_path}: {e}")
-    if not patterns:
-        patterns[base_path] = {"node_modules", ".git", ".expo", "android", "ios", "scripts", "dist", ".DS_Store", "*.log"}
-        logger.info("Using fallback patterns")
-    logger.info(f"Final .gitignore patterns: {patterns}")
+def load_gitignore_patterns(root_path: str) -> Dict[str, Set[str]]:
+    gitignore_path = Path(root_path) / ".gitignore"
+    patterns = {root_path: set()}
+    if gitignore_path.exists():
+        with open(gitignore_path, "r", encoding="utf-8") as f:
+            lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            patterns[root_path].update(lines)
+        logger.debug(f"Loaded from {gitignore_path}: {patterns[root_path]}")
     return patterns
 
-def infer_file_type(file_path: Path) -> str:
-    name = file_path.name.lower()
-    path_str = str(file_path).lower()
-    if ".test." in name:
+def infer_file_type(file_path: str) -> str:
+    ext = Path(file_path).suffix.lower()
+    if "test" in file_path.lower():
         return "test"
-    if "store" in name:
+    if ext in (".jsx", ".tsx"):
+        return "file"
+    if "store" in file_path.lower():
         return "store"
-    if "state" in path_str or "state" in name:
+    if "context" in file_path.lower():
         return "state"
     return "file"
 
-def extract_particule_logic(file_path: Path) -> str:
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-            match = re.search(r'export\s+const\s+ContextParticule\s*=\s*["\'](.+?)["\']', content)
-            return match.group(1).strip() if match else None
-    except Exception:
+def extract_particule_logic(file_path: str) -> dict:
+    """Extract structured context (purpose, props, calls) from a file's ContextParticule export."""
+    full_path = Path(app_path) / file_path
+    if not full_path.exists() or full_path.is_dir():
         return None
-
-def extract_api_calls(file_path: Path) -> list | None:
-    """
-    Scan a file for API calls (fetch, axios, custom clients, Supabase auth) and extract endpoints or methods.
-    Returns a list of detected API interactions (e.g., ["/api/roles", "supabase.auth.signIn"]) or None if none found.
-    """
-    calls = []
-    if file_path.suffix.lower() not in (".js", ".jsx", ".ts", ".tsx"):
-        logger.debug(f"Skipping API call extraction for non-code file: {file_path}")
-        return None
-
+    
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(full_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Fetch calls: fetch("/api/endpoint")
-        fetch_matches = re.findall(r'fetch\s*\(\s*["\']([^"\']+)["\']', content)
-        calls.extend(fetch_matches)
+        # Parse export const ContextParticule
+        context_match = re.search(r"export\s+const\s+ContextParticule\s*=\s*(\{.*?\});", content, re.DOTALL)
+        if context_match:
+            try:
+                context_str = context_match.group(1).replace("'", '"')
+                context = eval(context_str, {"__builtins__": {}})
+                return {
+                    "purpose": context.get("purpose", ""),
+                    "props": context.get("props", []),
+                    "calls": context.get("calls", [])
+                }
+            except Exception as e:
+                logger.debug(f"Invalid ContextParticule in {file_path}: {e}")
 
-        # Axios calls: axios("/api/endpoint"), axios.get("/api/endpoint"), etc.
-        axios_matches = re.findall(r'axios(?:\.\w+)?\s*\(\s*["\']([^"\']+)["\']', content)
-        calls.extend(axios_matches)
-
-        # Custom HTTP clients: http.get("/api/data"), apiClient("/api/users"), etc.
-        custom_matches = re.findall(r'(?:http|apiClient)\.\w+\s*\(\s*["\']([^"\']+)["\']', content)
-        calls.extend(custom_matches)
-
-        # Supabase auth calls: supabase.auth.signInWithPassword, supabase.auth.signOut, etc.
-        supabase_auth_matches = re.findall(r'supabase\.auth\.(signInWith\w+|signOut|signUp|resetPasswordForEmail|updateUser)\b', content)
-        calls.extend([f"supabase.auth.{match}" for match in supabase_auth_matches])
-
-        # Filter to likely endpoints/methods and deduplicate
-        calls = [call.strip() for call in calls if call.strip()]  # Keep all non-empty matches
-        calls = list(dict.fromkeys(calls))  # Preserve order, remove duplicates
-
-        if calls:
-            logger.debug(f"Found API calls in {file_path}: {calls}")
-            return calls
-        else:
-            logger.debug(f"No API calls found in {file_path}")
-            return None
+        # Fallback: Infer from code
+        context = {"purpose": "", "props": [], "calls": []}
+        # Props
+        props = re.findall(r"const\s+\w+\s*=\s*\(\{([^}]*)\}\)", content)
+        if props:
+            context["props"] = [p.strip() for p in props[0].split(",") if p.strip()]
+        # Calls (old extract_api_calls logic)
+        for line in content.splitlines():
+            if "fetch(" in line:
+                url = re.search(r"fetch\(['\"]([^'\"]+)['\"]", line)
+                if url:
+                    context["calls"].append(url.group(1))
+            if "supabase" in line:
+                if "signIn" in line:
+                    context["calls"].append("supabase.auth.signIn")
+                elif "signOut" in line:
+                    context["calls"].append("supabase.auth.signOut")
+        return context if any(context.values()) else None
 
     except Exception as e:
-        logger.error(f"Failed to scan {file_path} for API calls: {e}")
+        logger.debug(f"Error reading {file_path}: {e}")
         return None
 
-def extract_tech_stack(file_path: Path) -> list:
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-            imports = re.findall(r'import\s+(?:[\w\s{},*]+from\s+)?["\']([^./][^"\']+)["\']', content)
-            tech = [pkg for pkg in imports if pkg in {"react", "axios", "expo", "expo-router", "react-navigation"} or pkg.startswith("expo-")]
-            return list(set(tech)) or None
-    except Exception:
-        return None
+# Drop extract_api_calls since it's merged
