@@ -32,7 +32,7 @@ def infer_file_type(file_path: str) -> str:
     return "file"
 
 def extract_particule_logic(file_path: str) -> dict:
-    """Extract structured context (purpose, props, calls) from a file's ContextParticule export."""
+    """Extract structured context (purpose, props, calls) from a file's SubParticule export."""
     full_path = Path(app_path) / file_path
     if not full_path.exists() or full_path.is_dir():
         return None
@@ -41,8 +41,8 @@ def extract_particule_logic(file_path: str) -> dict:
         with open(full_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Parse export const ContextParticule
-        context_match = re.search(r"export\s+const\s+ContextParticule\s*=\s*(\{.*?\});", content, re.DOTALL)
+        # Parse export const SubParticule
+        context_match = re.search(r"export\s+const\s+SubParticule\s*=\s*(\{.*?\});", content, re.DOTALL)
         if context_match:
             try:
                 context_str = context_match.group(1).replace("'", '"')
@@ -50,18 +50,23 @@ def extract_particule_logic(file_path: str) -> dict:
                 return {
                     "purpose": context.get("purpose", ""),
                     "props": context.get("props", []),
-                    "calls": context.get("calls", [])
+                    "hooks": context.get("hooks", []),
+                    "calls": context.get("calls", []),
+                    "key_logic": context.get("key_logic", []),
+                    "depends_on": context.get("depends_on", [])
                 }
             except Exception as e:
-                logger.debug(f"Invalid ContextParticule in {file_path}: {e}")
+                logger.debug(f"Invalid SubParticule in {file_path}: {e}")
 
         # Fallback: Infer from code
-        context = {"purpose": "", "props": [], "calls": []}
+        context = {"purpose": "", "props": [], "hooks": [], "calls": []}
         # Props
         props = re.findall(r"const\s+\w+\s*=\s*\(\{([^}]*)\}\)", content)
         if props:
+         context = {"purpose": "", "props": [], "hooks": [], "calls": []}
+        props = re.findall(r"const\s+\w+\s*=\s*\(\{([^}]*)\}\)", content)
+        if props:
             context["props"] = [p.strip() for p in props[0].split(",") if p.strip()]
-        # Calls (old extract_api_calls logic)
         for line in content.splitlines():
             if "fetch(" in line:
                 url = re.search(r"fetch\(['\"]([^'\"]+)['\"]", line)

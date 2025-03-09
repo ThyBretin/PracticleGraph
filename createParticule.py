@@ -9,7 +9,10 @@ from particule_utils import (
 )
 from tech_stack import get_tech_stack
 
-def createParticule(feature_path: str) -> dict:
+def createParticule(feature_path: str) -> dict: 
+    """
+    Create a Particule Graph for a feature.
+    """
     primary_entities = []
     shared_entities = []
     gitignore_patterns = load_gitignore_patterns(app_path)
