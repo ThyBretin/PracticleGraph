@@ -1,13 +1,14 @@
 import re
+import json
 from pathlib import Path
 from particule_utils import app_path, logger
 
 def read_file(file_path: str) -> tuple[str, dict]:
     """Read file content or return an error."""
-    project_root = str(Path("/Users/Thy/Today"))  # Adjust if your root differs
+    project_root = str(Path("/Users/Thy/Today"))
     if file_path.startswith(project_root):
         old_path = file_path
-        file_path = file_path[len(project_root) + 1:]  # Strip root and separator
+        file_path = file_path[len(project_root) + 1:]
         logger.warning(f"Converted absolute path '{old_path}' to relative: '{file_path}'")
     elif file_path.startswith("/"):
         logger.error(f"Absolute path detected: {file_path} (use relative path from /project)")
@@ -40,14 +41,15 @@ def write_subparticule(file_path: str, context: dict) -> tuple[str, dict]:
         return None, {"error": f"Absolute path not supported: {file_path} (use relative path from /project)"}
 
     full_path = Path(app_path) / file_path
-    export_str = "export const SubParticule = {\n"
-    for key, value in context.items():
-        if key == "purpose" or isinstance(value, str):
-            export_str += f'  "{key}": "{value}",\n'
-        else:
-            value_str = str(value).replace("'", '"')  # Simple JSON-like format
-            export_str += f'  "{key}": {value_str},\n'
-    export_str = export_str.rstrip("\n").rstrip(",") + "\n};"
+    
+    # Use json.dumps for valid formatting
+    try:
+        export_str = f"export const SubParticule = {json.dumps(context, indent=2, ensure_ascii=False)};"
+        # Validate it
+        json.loads(export_str.split("=", 1)[1].rstrip(";"))
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON generated for {file_path}: {e}")
+        return None, {"error": f"Invalid JSON: {e}"}
 
     with open(full_path, "r", encoding="utf-8") as f:
         content = f.read()

@@ -1,0 +1,5 @@
+FROM node:16-slim
+WORKDIR /app
+COPY babel_parser.js .
+RUN npm install @babel/parser
+CMD ["node", "babel_parser.js"]
