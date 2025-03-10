@@ -13,7 +13,12 @@ def generate_subparticule(file_path: str = None, rich: bool = True) -> dict:
         logger.error("No file_path provided to generate_subparticule")
         return {"error": "No file_path provided"}
 
-    if file_path.startswith(PROJECT_ROOT):
+    # Handle paths that might contain the host machine path
+    host_prefix = "/Users/Thy/Today/"
+    if file_path.startswith(host_prefix):
+        relative_path = file_path[len(host_prefix):]
+        logger.warning(f"Converted host path '{file_path}' to relative: '{relative_path}'")
+    elif file_path.startswith(PROJECT_ROOT):
         relative_path = file_path[len(PROJECT_ROOT) + 1:]  # Strip '/project/'
     else:
         relative_path = file_path
@@ -28,7 +33,7 @@ def generate_subparticule(file_path: str = None, rich: bool = True) -> dict:
         return {"error": f"Read failed: {error}"}
 
     try:
-        cmd = ['node', 'babel_parser.js', relative_path]  # Use relative_path
+        cmd = ['node', 'babel_parser.js', relative_path]  # Use computed relative_path, not the original file_path
         logger.info(f"Executing subprocess: {' '.join(cmd)}")
         result = subprocess.run(
             cmd,

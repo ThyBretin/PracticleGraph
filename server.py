@@ -27,7 +27,7 @@ def main():
     mcp.tool()(list_dir)
     mcp.tool()(check_root)
     logger.info("Server initialized, entering main loop")
-    mcp.run(host="0.0.0.0", port=8000)  # Explicitly bind to all interfaces
+    mcp.run()  # No arguments here
 
 if __name__ == "__main__":
     try:
