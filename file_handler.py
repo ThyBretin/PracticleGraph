@@ -42,9 +42,13 @@ def write_subparticule(file_path: str, context: dict) -> tuple[str, dict]:
 
     full_path = Path(app_path) / file_path
     
+    # Remove empty arrays from context
+    filtered_context = {k: v for k, v in context.items() if not (isinstance(v, list) and len(v) == 0)}
+    logger.debug(f"Filtered {len(context) - len(filtered_context)} empty arrays from SubParticule")
+    
     # Use json.dumps for valid formatting
     try:
-        export_str = f"export const SubParticule = {json.dumps(context, indent=2, ensure_ascii=False)};"
+        export_str = f"export const SubParticule = {json.dumps(filtered_context, indent=2, ensure_ascii=False)};"
         # Validate it
         json.loads(export_str.split("=", 1)[1].rstrip(";"))
     except json.JSONDecodeError as e:

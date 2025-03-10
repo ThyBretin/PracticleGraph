@@ -9,7 +9,15 @@ if (!filePath) {
 }
 
 try {
-  const absolutePath = path.join('/project', filePath);
+  // Handle both absolute paths (starting with /project) and relative paths
+  let absolutePath;
+  if (filePath.startsWith('/project/')) {
+    absolutePath = filePath;
+  } else {
+    absolutePath = path.join('/project', filePath);
+  }
+  
+  console.error(`Reading file from: ${absolutePath}`); // Debug log
   const code = fs.readFileSync(absolutePath, 'utf-8');
   const ast = parse(code, {
     sourceType: 'module',
