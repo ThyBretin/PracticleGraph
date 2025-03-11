@@ -2,21 +2,65 @@ import json
 import logging
 import os
 import re
+import fnmatch
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Optional
 
 app_path = os.getenv("PARTICULE_PATH", "/project")
 particule_cache: Dict[str, dict] = {}
 logger = logging.getLogger("ParticuleGraph")
 
-def load_gitignore_patterns(root_path: str) -> Dict[str, Set[str]]:
-    gitignore_path = Path(root_path) / ".gitignore"
-    patterns = {root_path: set()}
-    if gitignore_path.exists():
-        with open(gitignore_path, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-            patterns[root_path].update(lines)
-        logger.debug(f"Loaded from {gitignore_path}: {patterns[root_path]}")
+def load_gitignore_patterns(root_path: str) -> Dict[Path, List[str]]:
+    """
+    Load gitignore patterns recursively from all .gitignore files in the directory tree.
+    
+    Args:
+        root_path: The root directory to start searching from
+        
+    Returns:
+        A dictionary mapping directory paths to lists of gitignore patterns
+    """
+    patterns = {}
+    root = Path(root_path)
+    
+    # Function to process a .gitignore file
+    def process_gitignore(path: Path, gitignore_path: Path):
+        if not gitignore_path.exists():
+            return
+        
+        try:
+            with open(gitignore_path, "r", encoding="utf-8") as f:
+                lines = []
+                for line in f:
+                    line = line.strip()
+                    # Skip empty lines and comments
+                    if not line or line.startswith('#'):
+                        continue
+                    # Normalize patterns
+                    if line.startswith('/'):
+                        line = line[1:]  # Remove leading slash for relative patterns
+                    # Add the pattern
+                    lines.append(line)
+                
+                if lines:
+                    patterns[path] = lines
+                    logger.debug(f"Loaded {len(lines)} patterns from {gitignore_path}")
+        except Exception as e:
+            logger.warning(f"Error reading {gitignore_path}: {e}")
+    
+    # First check the root .gitignore
+    process_gitignore(root, root / ".gitignore")
+    
+    # Then walk the directory tree to find all .gitignore files
+    for dirpath, dirnames, filenames in os.walk(root_path):
+        # Skip .git directories
+        if '.git' in dirnames:
+            dirnames.remove('.git')
+        
+        dir_path = Path(dirpath)
+        if '.gitignore' in filenames:
+            process_gitignore(dir_path, dir_path / '.gitignore')
+    
     return patterns
 
 def infer_file_type(file_path: str) -> str:
@@ -61,9 +105,6 @@ def extract_particule_logic(file_path: str) -> dict:
         # Fallback: Infer from code
         context = {"purpose": "", "props": [], "hooks": [], "calls": []}
         # Props
-        props = re.findall(r"const\s+\w+\s*=\s*\(\{([^}]*)\}\)", content)
-        if props:
-         context = {"purpose": "", "props": [], "hooks": [], "calls": []}
         props = re.findall(r"const\s+\w+\s*=\s*\(\{([^}]*)\}\)", content)
         if props:
             context["props"] = [p.strip() for p in props[0].split(",") if p.strip()]

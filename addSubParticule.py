@@ -33,15 +33,19 @@ def generate_subparticule(file_path: str = None, rich: bool = True) -> dict:
         return {"error": f"Read failed: {error}"}
 
     try:
-        # Absolute path for Node.js to read from PROJECT_ROOT
-        node_path = str(absolute_path) 
+        node_path = str(absolute_path)
         cmd = ['node', '/app/babel_parser.js', node_path]
-        logger.info(f"Executing subprocess: {' '.join(cmd)}")
+        # Pass RICH_PARSING if rich=True
+        env = os.environ.copy()
+        if rich:
+            env['RICH_PARSING'] = '1'
+        logger.info(f"Executing subprocess: {' '.join(cmd)} with RICH_PARSING={env.get('RICH_PARSING', '0')}")
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            check=True
+            check=True,
+            env=env  # Pass modified env
         )
         logger.debug(f"Babel stdout: {result.stdout}")
         logger.debug(f"Babel stderr: {result.stderr}")
@@ -50,9 +54,8 @@ def generate_subparticule(file_path: str = None, rich: bool = True) -> dict:
             return {"error": "Babel produced empty output"}
         context = json.loads(result.stdout)
         
-        # Filter out empty arrays before passing to write_subparticule
         filtered_context = {k: v for k, v in context.items() if not (isinstance(v, list) and len(v) == 0)}
-        logger.debug(f"Filtered context (removed empty arrays): {json.dumps(filtered_context)}")
+        logger.debug(f"Filtered context: {json.dumps(filtered_context)}")
         
         export_str, error = write_subparticule(relative_path, filtered_context)
         if error:
@@ -78,7 +81,6 @@ def generate_subparticule(file_path: str = None, rich: bool = True) -> dict:
             "note": "SubParticule applied directly to file",
             "post_action": "read"
         }
-
     except subprocess.CalledProcessError as e:
         logger.error(f"Babel failed for {relative_path}: {e.stderr}")
         return {"error": f"Babel parse failed: {e.stderr}"}
@@ -97,14 +99,24 @@ def addSubParticule(file_path: str = None, rich: bool = True) -> dict:
     Unlike createParticule which creates a graph for an entire feature,
     addSubParticule focuses on a single file only.
     
+    Special parameters:
+        file_path = "all" - will process all files in the project root
+    
     Args:
         file_path: Path to the JS/JSX file to analyze (absolute or relative to PROJECT_ROOT)
+                  or "all" to process all files in the project
         rich: If True, include detailed metadata including key_logic and depends_on
         
     Returns:
         dict: Result containing the SubParticule data and operation status
     """
     logger.info(f"*** ADDSUB PARTICULE FUNCTION EXPLICITLY CALLED with {file_path} ***")
+    
+    # Special case: handle "all" parameter
+    if file_path and file_path.lower() in ("all", "codebase"):
+        logger.info("Delegating to addAllSubParticule function")
+        return addAllSubParticule(rich=rich)
+        
     return generate_subparticule(file_path, rich=rich)
 
 def addAllSubParticule(root_dir: str = PROJECT_ROOT, rich: bool = True) -> dict:

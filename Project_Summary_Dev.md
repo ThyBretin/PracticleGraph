@@ -25,6 +25,12 @@ Particule-Graph is a codebase analysis tool that automatically generates metadat
 - **addAllSubParticule.py**: Implements recursive directory traversal with gitignore support
 - **file_handler.py**: Manages file I/O with path translation and JSON formatting
 - **particule_utils.py**: Contains shared utilities and logging infrastructure
+- **createParticule.py**: Creates feature-based Particule Graphs by crawling directories
+- **createCodebaseParticule.py**: Creates whole-codebase Particule Graph from all available SubParticules
+- **loadGraph.py**: Loads specific feature graphs with support for feature aggregation
+- **loadCodebaseGraph.py**: Loads the complete codebase graph with a single command
+- **exportGraph.py**: Exports feature-based graphs to JSON files
+- **exportCodebaseGraph.py**: Exports the entire codebase graph to a JSON file
 - **server.py**: MCP server entry point that registers analysis tools
 
 ## Technical Details
@@ -64,15 +70,38 @@ export const SubParticule = {
    - Handles path translation and respects gitignore
    - Returns summary with modified file count
 
-3. **listGraph()**
+3. **createParticule(feature_path)**
+   - Creates a feature-based Particule Graph by crawling a specific directory
+   - Special values: "codebase" or "all" to create a whole-codebase graph
+
+4. **listGraph()**
    - Lists all available feature graphs in the codebase
 
-4. **loadGraph(features)**
+5. **loadGraph(features)**
    - Loads specific feature graphs (comma-separated)
    - Merges multiple features when requested
+   - Special values: "codebase" or "all" to load the whole-codebase graph
 
-5. **exportGraph(features)**
+6. **exportGraph(features)**
    - Exports graph data to JSON for external consumption
+   - Special values: "codebase" or "all" to export the whole-codebase graph
+
+## Feature-Based vs. Codebase-Wide Analysis
+
+Particule-Graph supports two complementary approaches to codebase analysis:
+
+1. **Feature-Based Workflow**:
+   - Traditional approach organizing code by feature directories
+   - Creates focused graphs for specific application domains
+   - Useful for large projects with clear separation of concerns
+
+2. **Codebase-Wide Workflow** (New):
+   - Repository-agnostic approach for any folder structure
+   - Works with standard layouts (src/, components/, etc.)
+   - Creates a single comprehensive graph of the entire codebase
+   - Commands: `createParticule("codebase")`, `loadGraph("codebase")`, `exportGraph("codebase")`
+
+Both approaches share the same command interface with special parameter handling.
 
 ## Deployment Instructions
 
@@ -90,3 +119,4 @@ docker run -m 2g -v /Users/Thy/Today:/project -i particule-graph
 - Optimized for accuracy over raw performance
 - Minimal external dependencies for long-term maintainability
 - Clear separation between parsing (Node.js) and orchestration (Python) layers
+- Delegation pattern for extending functionality without modifying core components

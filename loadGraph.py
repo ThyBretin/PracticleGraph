@@ -1,12 +1,20 @@
 import json
 from datetime import datetime
 from particule_utils import particule_cache, logger
+from loadCodebaseGraph import loadCodebaseGraph
 
 def loadGraph(features: str) -> dict:
     """
     Load and optionally aggregate Particule Graphs for one or more features.
     If multiple features are provided (comma-separated), aggregates tech_stack and groups files.
+    
+    Special values:
+    - "codebase" or "all": Load the full codebase graph if available
     """
+    # Handle special codebase parameter with delegation pattern
+    if features.lower() in ("codebase", "all"):
+        return loadCodebaseGraph()
+        
     # Parse features (e.g., "Events,Role" → ["events", "role"]
     feature_list = [f.strip().lower() for f in features.split(",")]
     logger.debug(f"Loading Particule Graphs: {feature_list}")

@@ -8,11 +8,19 @@ from particule_utils import (
     extract_particule_logic
 )
 from tech_stack import get_tech_stack
+from createCodebaseParticule import createCodebaseParticule
 
 def createParticule(feature_path: str) -> dict: 
     """
     Create a Particule Graph for a feature.
+    
+    Special values:
+    - "codebase" or "all": Create a graph for the entire codebase
     """
+    # Handle special codebase parameter with delegation pattern
+    if feature_path.lower() in ("codebase", "all"):
+        return createCodebaseParticule()
+        
     primary_entities = []
     shared_entities = []
     gitignore_patterns = load_gitignore_patterns(app_path)

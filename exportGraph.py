@@ -3,11 +3,19 @@ from datetime import datetime
 from pathlib import Path
 from particule_utils import app_path, logger
 from loadGraph import loadGraph
+from exportCodebaseGraph import exportCodebaseGraph
 
 def exportGraph(features: str) -> dict:
     """
     Export a Particule Graph (single or aggregate) to a JSON file.
+    
+    Special values:
+    - "codebase" or "all": Export the full codebase graph if available
     """
+    # Handle special codebase parameter with delegation pattern
+    if features.lower() in ("codebase", "all"):
+        return exportCodebaseGraph()
+        
     manifest = loadGraph(features)
     if "error" in manifest:
         return {"error": manifest["error"]}
