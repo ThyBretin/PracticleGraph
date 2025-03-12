@@ -77,11 +77,11 @@ UI behavior (e.g., scroll/animation hooks).
 
 Adjust parsing/output if it misses the story.
 
-Decoupling: Run this as a one-off test via addSubParticle.py with the new flag, no permanent changes yet.
+Decoupling: Run this as a one-off test via addParticle.py with the new flag, no permanent changes yet.
 4. Iterate and Expand
 Objective: Roll out enhancements codebase-wide once validated.
 Steps:
-Apply Babel enhancements to all files via addAllSubParticle.py.
+Apply Babel enhancements to all files via addAllParticle.py.
 
 Update graph generation to use new structure consistently.
 
@@ -91,7 +91,7 @@ If business logic gaps remain (e.g., "why roles?"), consider a lightweight, opti
 
 Implementation Guidelines
 Minimize Disruption:
-No rewriting existing babel_parser.js or addSubParticle.py logic—add new functions or optional branches.
+No rewriting existing babel_parser.js or addParticle.py logic—add new functions or optional branches.
 
 Use config flags (e.g., in server.py) to toggle enhancements, keeping old behavior as default.
 
@@ -105,17 +105,17 @@ babel_parser.js: To extend parsing.
 
 NavigationBar.jsx: For testing (please share this one!).
 
-addSubParticle.py, createCodebaseParticle.py, exportGraph.py: For integration.
+addParticle.py, createCodebaseParticle.py, exportGraph.py: For integration.
 
 Maybe particle_utils.py: For shared helpers.
 
 I’ll ask if I need more—don’t want to overwhelm you, and the graph gives me plenty to start theorizing.
 
 Non-Coder Friendly:
-I’ll keep changes simple, documented, and reversible. You can review outputs (e.g., updated SubParticle for NavigationBar) without diving into code.
+I’ll keep changes simple, documented, and reversible. You can review outputs (e.g., updated Particle for NavigationBar) without diving into code.
 
 What I Think We Should Do Next
-Share NavigationBar.jsx: It’s the perfect guinea pig—central, complex, and story-rich. I’ll mock up what its enhanced SubParticle could look like based on the graph and our plan.
+Share NavigationBar.jsx: It’s the perfect guinea pig—central, complex, and story-rich. I’ll mock up what its enhanced Particle could look like based on the graph and our plan.
 
 Draft Babel Enhancements: I’ll propose a few parsing additions (props, route calls, detailed logic) without coding yet—just a spec.
 
@@ -202,7 +202,7 @@ Data Sources: "data": {"supabase": ["events"], "stores": ["eventState.js:useEven
 Key Patterns: "patterns": {"role_based": 10, "state_driven": 5} (counted from useRole, state machines).
 
 File-Level Detail:
-Keep SubParticle but enrich it:
+Keep Particle but enrich it:
 json
 
 "eventState.js": {
@@ -277,7 +277,7 @@ New babel_parser_enhancements.js with enhanceMetadata.
 
 Config flag: richParsing: true in server.py.
 
-Test via addSubParticle.py --rich.
+Test via addParticle.py --rich.
 
 Graph Tweaks:
 New graph_utils.py for postProcessGraph (e.g., app_story, dependencies).

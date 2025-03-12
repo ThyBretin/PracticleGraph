@@ -19,8 +19,8 @@ def infer_purpose(file_path: str, content: str, rich: bool = True) -> str:
         purpose = f"Handles {stem} functionality"
     return purpose
 
-def build_subparticle(file_path: str, content: str, props: list, hooks: list, calls: list, key_logic: list, depends_on: list, rich: bool = True) -> dict:
-    """Assemble the SubParticle context."""
+def build_Particle(file_path: str, content: str, props: list, hooks: list, calls: list, key_logic: list, depends_on: list, rich: bool = True) -> dict:
+    """Assemble the Particle context."""
     purpose = infer_purpose(file_path, content, rich)
     context = {"purpose": purpose}
 
@@ -35,5 +35,5 @@ def build_subparticle(file_path: str, content: str, props: list, hooks: list, ca
     if depends_on:
         context["depends_on"] = depends_on
 
-    logger.debug(f"Built SubParticle context: {context}")
+    logger.debug(f"Built Particle context: {context}")
     return context

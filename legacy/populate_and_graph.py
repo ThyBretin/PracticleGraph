@@ -2,14 +2,14 @@ import os
 from pathlib import Path
 import json
 import re
-from addSubParticle import addAllSubParticle
+from addParticle import addAllParticle
 from file_handler import read_file
 from particle_utils import logger
 
 def populate_and_graph(root_dir="/project"):
     # Step 1: Populate
-    logger.info("Running addAllSubParticle...")
-    result = addAllSubParticle(root_dir)
+    logger.info("Running addAllParticle...")
+    result = addAllParticle(root_dir)
     logger.info(f"Population result: {result}")
 
     # Step 2: Crawl and log
@@ -30,20 +30,20 @@ def populate_and_graph(root_dir="/project"):
                     logger.warning(f"Skipped {file_path}: {error or 'No content'}")
                     continue
                 
-                if "export const SubParticle =" not in content:
-                    logger.warning(f"No SubParticle in {file_path}")
+                if "export const Particle =" not in content:
+                    logger.warning(f"No Particle in {file_path}")
                     continue
                 
-                # Extract SubParticle JSON with regex
-                match = re.search(r"export const SubParticle = (\{.*?\});", content, re.DOTALL)
+                # Extract Particle JSON with regex
+                match = re.search(r"export const Particle = (\{.*?\});", content, re.DOTALL)
                 if not match:
-                    logger.warning(f"No valid SubParticle JSON in {file_path}")
+                    logger.warning(f"No valid Particle JSON in {file_path}")
                     continue
                 
                 try:
                     context = json.loads(match.group(1))
                 except json.JSONDecodeError as e:
-                    logger.warning(f"Invalid SubParticle in {file_path}: {e}")
+                    logger.warning(f"Invalid Particle in {file_path}: {e}")
                     continue
 
                 # Group by feature

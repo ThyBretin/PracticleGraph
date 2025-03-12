@@ -32,7 +32,7 @@ Particle-Graph is a breakthrough tool that transforms how non-developers and sol
 
 1. **Automated Analysis**: Particle-Graph scans your codebase to identify props, hooks, API calls, key logic patterns, and dependencies.
 
-2. **Smart Metadata**: It embeds `SubParticle` objects—compact, information-dense summaries—directly into your files.
+2. **Smart Metadata**: It embeds `Particle` objects—compact, information-dense summaries—directly into your files.
 
 3. **Knowledge Graph**: It builds a comprehensive map of your entire application that AI can instantly comprehend.
 

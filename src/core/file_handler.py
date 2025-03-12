@@ -1,7 +1,7 @@
 import re
 import json
 from pathlib import Path
-from particle_utils import app_path, logger
+from src.core.particle_utils import app_path, logger
 
 def read_file(file_path: str) -> tuple[str, dict]:
     """Read file content or return an error."""
@@ -29,8 +29,8 @@ def read_file(file_path: str) -> tuple[str, dict]:
     logger.debug(f"File content read: {len(content)} chars")
     return content, None
 
-def write_subparticle(file_path: str, context: dict) -> tuple[str, dict]:
-    """Write SubParticle export to file, updating if it exists."""
+def write_particle(file_path: str, context: dict) -> tuple[str, dict]:
+    """Write Particle export to file, updating if it exists."""
     project_root = str(Path("/Users/Thy/Today"))
     if file_path.startswith(project_root):
         old_path = file_path
@@ -44,11 +44,11 @@ def write_subparticle(file_path: str, context: dict) -> tuple[str, dict]:
     
     # Remove empty arrays from context
     filtered_context = {k: v for k, v in context.items() if not (isinstance(v, list) and len(v) == 0)}
-    logger.debug(f"Filtered {len(context) - len(filtered_context)} empty arrays from SubParticle")
+    logger.debug(f"Filtered {len(context) - len(filtered_context)} empty arrays from Particle")
     
     # Use json.dumps for valid formatting
     try:
-        export_str = f"export const SubParticle = {json.dumps(filtered_context, indent=2, ensure_ascii=False)};"
+        export_str = f"export const Particle = {json.dumps(filtered_context, indent=2, ensure_ascii=False)};"
         # Validate it
         json.loads(export_str.split("=", 1)[1].rstrip(";"))
     except json.JSONDecodeError as e:
@@ -58,19 +58,19 @@ def write_subparticle(file_path: str, context: dict) -> tuple[str, dict]:
     with open(full_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    if "export const SubParticle" in content:
+    if "export const Particle" in content:
         updated_content = re.sub(
-            r"export\s+const\s+SubParticle\s*=\s*\{.*?\};",
+            r"export\s+const\s+Particle\s*=\s*\{.*?\};",
             export_str,
             content,
             flags=re.DOTALL
         )
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(updated_content)
-        logger.info(f"SubParticle updated in {file_path}")
+        logger.info(f"Particle updated in {file_path}")
     else:
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(export_str + "\n\n" + content)
-        logger.info(f"SubParticle added to {file_path}")
+        logger.info(f"Particle added to {file_path}")
 
     return export_str, None

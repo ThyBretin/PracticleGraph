@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Particle-Graph is a codebase analysis tool that automatically generates metadata for React Native/Expo components. It extracts props, hooks, API calls, key logic patterns, and dependencies, then embeds this information as structured `SubParticle` objects directly in source files. The system aggregates these objects to create comprehensive dependency graphs and tech stacks.
+Particle-Graph is a codebase analysis tool that automatically generates metadata for React Native/Expo components. It extracts props, hooks, API calls, key logic patterns, and dependencies, then embeds this information as structured `Particle` objects directly in source files. The system aggregates these objects to create comprehensive dependency graphs and tech stacks.
 
 ## Architecture
 
@@ -16,17 +16,17 @@ Particle-Graph is a codebase analysis tool that automatically generates metadata
 1. **Input Processing**: Path mapping between host and container environments
 2. **AST Parsing**: Babel parser extracts component metadata via abstract syntax tree analysis
 3. **Metadata Generation**: Builds JSON structure with purpose, props, hooks, calls, logic, dependencies
-4. **File Manipulation**: Embeds `SubParticle` objects directly in source files
+4. **File Manipulation**: Embeds `Particle` objects directly in source files
 
 ### Key Files
 
 - **babel_parser.js**: Node.js script using Babel AST to extract component metadata
-- **addSubParticle.py**: Handles single-file analysis with subprocess communication to Babel
-- **addAllSubParticle.py**: Implements recursive directory traversal with gitignore support
+- **addParticle.py**: Handles single-file analysis with subprocess communication to Babel
+- **addAllParticle.py**: Implements recursive directory traversal with gitignore support
 - **file_handler.py**: Manages file I/O with path translation and JSON formatting
 - **particle_utils.py**: Contains shared utilities and logging infrastructure
 - **createParticle.py**: Creates feature-based Particle Graphs by crawling directories
-- **createCodebaseParticle.py**: Creates whole-codebase Particle Graph from all available SubParticles
+- **createCodebaseParticle.py**: Creates whole-codebase Particle Graph from all available Particles
 - **loadGraph.py**: Loads specific feature graphs with support for feature aggregation
 - **loadCodebaseGraph.py**: Loads the complete codebase graph with a single command
 - **exportGraph.py**: Exports feature-based graphs to JSON files
@@ -46,9 +46,9 @@ Particle-Graph is a codebase analysis tool that automatically generates metadata
 - Two-stage filtering approach (JS-side and Python-side) for reliability
 - JSON validation to ensure consistent output format
 
-### SubParticle Format
+### Particle Format
 ```javascript
-export const SubParticle = {
+export const Particle = {
   "purpose": "Component's inferred purpose",
   "props": ["prop1", "prop2"],       // Only present if non-empty
   "hooks": ["useState", "useEffect"], // Only present if non-empty
@@ -62,11 +62,11 @@ export const SubParticle = {
 
 ### Main Functions
 
-1. **addSubParticle(file_path, rich=True)**
+1. **addParticle(file_path, rich=True)**
    - Analyzes single file
    - Returns detailed operation status with JSON metadata
 
-2. **addAllSubParticle(root_dir="/project", rich=True)**
+2. **addAllParticle(root_dir="/project", rich=True)**
    - Processes all JS/JSX files in directory recursively
    - Handles path translation and respects gitignore
    - Returns summary with modified file count
@@ -139,7 +139,7 @@ The current architecture has several strengths but also exhibits signs of techni
    - Missing type validation before accessing properties
 
 2. **Path Translation Complexity**: Multiple approaches to path translation create confusion:
-   - Inconsistent handling between addSubParticle and addAllSubParticle
+   - Inconsistent handling between addParticle and addAllParticle
    - Redundant path conversion logic scattered across files
 
 3. **Tech Stack Analysis**: Current implementation has robustness issues:
@@ -154,28 +154,49 @@ The current architecture has several strengths but also exhibits signs of techni
 
 ### 1. Code Structure Reorganization
 ```
-particle-graph/
-├── src/
-│   ├── core/              # Core logic
-│   │   ├── parser.py      # Babel orchestration
-│   │   ├── file_handler.py# File I/O
-│   │   └── path_utils.py  # Path resolution
-│   ├── analysis/         # Analysis tools
-│   │   ├── component.py  # Component parsing
-│   │   ├── dependency.py # Dependency tracking
-│   │   └── tech_stack.py # Tech stack analysis
-│   ├── api/             # User-facing commands
-│   │   ├── add_particle.py  # addParticle()
-│   │   ├── graph.py        # createGraph(), loadGraph(), exportGraph()
-│   └── utils/              # Helpers
-│       ├── logging.py      # Logging
-│       ├── validation.py   # Input checks
-│       └── error_handling.py # Errors
-├── js/                    # JS parsing
-│   └── babel_parser.js    # AST parsing
-├── tests/                # Tests
+Particle-Graph/
+├── server.py
+├── requirements.txt
 ├── Dockerfile
-└── server.py             # MCP entry point
+├── docker-compose.yml
+├── README.md
+├── src/
+│   ├── api/
+│   │   ├── add_particle.py
+│   │   ├── create_graph.py
+│   │   ├── delete_graph.py
+│   │   ├── export_graph.py
+│   │   ├── list_graph.py
+│   │   ├── load_graph.py
+│   │   └── update_graph.py
+│   ├── core/
+│   │   ├── dependency_tracker.py  # Your name
+│   │   ├── file_handler.py
+│   │   └── particle_utils.py
+│   ├── analysis/
+│   │   └── tech_stack.py
+│   └── utils/
+│       ├── check_root.py        # Keep for now
+│       ├── config_loader.py     # Add if not there
+│       └── list_dir.py          # Keep for now
+├── legacy/
+│   ├── addParticle.py
+│   ├── addAllParticle.py
+│   ├── createParticle.py
+│   ├── createCodebaseParticle.py
+│   ├── exportGraph.py
+│   ├── exportCodebaseGraph.py
+│   ├── loadGraph.py
+│   ├── loadCodebaseGraph.py
+│   ├── deleteParticle.py
+│   ├── updateParticle.py
+├── js/
+│   └── babel_parser.js
+├── dev/
+│   └── debug_graph.py
+└── doc/
+    ├── Particle.md
+    ├── Project-Refactoring.md
 ```
 
 ### 2. Defensive Programming Strategy

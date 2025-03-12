@@ -113,14 +113,14 @@ def createCodebaseParticle() -> dict:
         
         if file_count == 0:
             guidance = (
-                "No SubParticle metadata found in codebase. To add metadata:\n"
-                "1. Run 'addSubParticle(file_path)' on individual files\n"
-                "2. Or run 'addAllSubParticle()' to process all JS/JSX files"
+                "No Particle metadata found in codebase. To add metadata:\n"
+                "1. Run 'addParticle(file_path)' on individual files\n"
+                "2. Or run 'addAllParticle()' to process all JS/JSX files"
             )
             logger.warning(guidance)
             return {
                 "content": [{"type": "text", "text": guidance}],
-                "summary": "No SubParticles found in codebase",
+                "summary": "No Particles found in codebase",
                 "status": "ERROR",
                 "isError": True,
                 "error": guidance

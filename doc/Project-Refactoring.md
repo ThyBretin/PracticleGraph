@@ -1,6 +1,6 @@
 
 ## Refactoring
-- **addSubParticle.py** and **addAllSubParticle.py**:  has to merge to make a unified function. It should be named : addParticle" 
+- **addParticle.py** and **addAllParticle.py**:  has to merge to make a unified function. It should be named : addParticle" 
 
 - **createParticle.py** and **createCodebaseParticle.py**:  has to merge to make a unified function. It should be named : createGraph" 
 

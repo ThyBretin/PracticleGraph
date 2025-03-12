@@ -26,7 +26,7 @@ def exportCodebaseGraph() -> dict:
     # Count only processed files
     file_count = len(manifest.get("files", {}))
     manifest["file_count"] = file_count
-    manifest["js_files_total"] = file_count  # Only SubParticle'd files
+    manifest["js_files_total"] = file_count  # Only Particle'd files
     manifest["coverage_percentage"] = 100.0  # All relevant files covered
     manifest["exported_at"] = datetime.utcnow().isoformat() + "Z"
     manifest["export_filename"] = filename

@@ -1,15 +1,15 @@
 # Particle-Graph Project Summary
 
 ## Intent
-Particle-Graph is a tool to analyze and document React Native/Expo codebases by generating `SubParticle` objects—metadata summaries of components. It aims to:
+Particle-Graph is a tool to analyze and document React Native/Expo codebases by generating `Particle` objects—metadata summaries of components. It aims to:
 - Extract props, hooks, API calls, key logic, and dependencies from individual files.
-- Export this metadata as `export const SubParticle = {...}` directly into source files.
+- Export this metadata as `export const Particle = {...}` directly into source files.
 - Aggregate graphs for directories/features to map tech stacks, relationships, and business logic.
 - Serve as a single source of truth—reflecting code, logic, and tech—for maintenance, debugging, onboarding, and AI context.
 
 ## Core Functionality
-- **`addSubParticle(file_path, rich=True)`**: Analyzes a file, generates a `SubParticle`, writes it back.
-- **`addAllSubParticle(root_dir="/project")`**: Populates `SubParticle`s across a codebase (e.g., 154 files).
+- **`addParticle(file_path, rich=True)`**: Analyzes a file, generates a `Particle`, writes it back.
+- **`addAllParticle(root_dir="/project")`**: Populates `Particle`s across a codebase (e.g., 154 files).
 - **`listGraph(features)`**: Lists available graphs (e.g., `Events,Navigation,Role`).
 - **`loadGraph(features)`**: Loads a graph for specified features (e.g., `Events,Navigation,Role`).
 - **`exportGraph(features)`**: Aggregates a graph for specified features (e.g., `Events,Navigation,Role`).
@@ -17,17 +17,17 @@ Particle-Graph is a tool to analyze and document React Native/Expo codebases by 
 - **Tools**: Dockerized MCP server, callable via CLI or IDE integration.
 
 ## Files
-- **`addSubParticle.py`**: Orchestrates analysis, calls parsers, and exports via `file_handler`.
+- **`addParticle.py`**: Orchestrates analysis, calls parsers, and exports via `file_handler`.
 - **`file_handler.py`**: Reads/writes files, maps paths (`/project` root in Docker), ensures valid JSON.
 - **`prop_parser.py`**: Extracts props (regex now; Tree-sitter in progress).
 - **`hook_analyzer.py`**: Identifies hooks, infers purpose (e.g., `useRouter` → navigation).
 - **`call_detector.py`**: Detects API calls (e.g., `supabase.from()`, `fetch`).
 - **`logic_inferer.py`**: Infers `key_logic` (conditions, state, animations; some file-specific rules).
 - **`dependency_tracker.py`**: Maps imports and runtime deps (e.g., hooks to files).
-- **`context_builder.py`**: Builds `SubParticle` with `purpose` from file name/content.
-- **`exportGraph.py`**: Aggregates graphs from populated `SubParticle`s.
+- **`context_builder.py`**: Builds `Particle` with `purpose` from file name/content.
+- **`exportGraph.py`**: Aggregates graphs from populated `Particle`s.
 - **`particle_utils.py`**: Logger, `app_path` (`/project`), caching (assumed).
-- **`server.py`**: FastMCP server—registers tools (`addSubParticle`, `addAllSubParticle`, `exportGraph`).
+- **`server.py`**: FastMCP server—registers tools (`addParticle`, `addAllParticle`, `exportGraph`).
 - **`populate_and_graph.py`** (proposed): One-shot full-codebase graph script.
 - **Docker**: `Dockerfile` builds `particle-graph`, mounts `/Users/Thy/Today:/project`.
 
@@ -40,8 +40,8 @@ Particle-Graph is a tool to analyze and document React Native/Expo codebases by 
 
 ## Current State (March 09, 2025)
 - **Working**: 
-  - `addSubParticle` generates/writes `SubParticle` for files (e.g., `NavigationBar.jsx`, `EventStatus.jsx`).
-  - `addAllSubParticle` populates 154 files; `exportGraph` aggregates features (51 files in `Events,Navigation,Role`).
+  - `addParticle` generates/writes `Particle` for files (e.g., `NavigationBar.jsx`, `EventStatus.jsx`).
+  - `addAllParticle` populates 154 files; `exportGraph` aggregates features (51 files in `Events,Navigation,Role`).
 - **Accuracy**: 90%+ for GetReal with dedicated tweaks; ~60-70% agnostic.
 - **Props**: Regex catches most (e.g., `onPress: function`); Tree-sitter WIP for edge cases.
 - **Key Logic**: Mix of generic (e.g., `"Tracks current position"`) and specific (e.g., `"Renders tabs by role"`).
@@ -64,7 +64,7 @@ ____________________
 
 Comprehensive Plan: Babel in Docker with Subprocess Sync
 Objective
-Goal: Parse GetReal JS/JSX files with Babel for max accuracy (SubParticles with props, hooks, logic), sync to Python Particle-Graph MCP via subprocess, build a rich full_codebase_graph.json.
+Goal: Parse GetReal JS/JSX files with Babel for max accuracy (Particles with props, hooks, logic), sync to Python Particle-Graph MCP via subprocess, build a rich full_codebase_graph.json.
 
 Focus: Relevancy (95%+ depth)—time/scale secondary.
 
@@ -72,7 +72,7 @@ Setup: Two Docker containers—Python MCP (Particle-Graph) + Node.js Babel parse
 
 Project Structure
 Particle-Graph (/Users/Thy/Today):
-Python MCP server—runs server.py, addSubParticle.py, etc.
+Python MCP server—runs server.py, addParticle.py, etc.
 
 Dockerized, mounts GetReal as /project.
 
@@ -81,7 +81,7 @@ JS/React Native codebase—154 files now, growing slow (chat, ticketing, i18n la
 
 No Node/Babel deps—stays clean.
 
-Sync: Python → Babel Docker (file path) → JSON → writes SubParticle to GetReal files.
+Sync: Python → Babel Docker (file path) → JSON → writes Particle to GetReal files.
 
 Step-by-Step Implementation
 1. Prep Your Environment
@@ -95,7 +95,7 @@ Python 3.9+ (for MCP).
 Node.js (local dev, optional—Docker handles it).
 
 2. Babel Parser Container
-File: babel_parser.js—parses JS/JSX, outputs SubParticle JSON.
+File: babel_parser.js—parses JS/JSX, outputs Particle JSON.
 Location: /Users/Thy/Today/babel_parser.js.
 
 Content: 
@@ -105,7 +105,7 @@ Uses @babel/parser (JSX, modern JS).
 
 Extracts props, hooks, calls, logic, deps.
 
-Merges with existing SubParticle if present.
+Merges with existing Particle if present.
 
 Outputs JSON.
 
@@ -136,8 +136,8 @@ bash
 docker build -f Dockerfile.babel -t babel-parser .
 
 3. Particle-Graph MCP Container
-File: addSubParticle.py—calls Babel, writes SubParticle.
-Location: /Users/Thy/Today/addSubParticle.py.
+File: addParticle.py—calls Babel, writes Particle.
+Location: /Users/Thy/Today/addParticle.py.
 
 Content:
 Reads file via file_handler.
@@ -146,7 +146,7 @@ Runs docker run -v /Users/Thy/Today:/app babel-parser /app/path/to/file.
 
 Parses JSON output.
 
-Writes export const SubParticle = {...} to file.
+Writes export const Particle = {...} to file.
 
 Key Features:
 Subprocess sync—file path handoff.
@@ -189,12 +189,12 @@ docker-compose up --build
 Test Single File:
 bash
 
-docker-compose run particle-graph python -c "from addSubParticle import addSubParticle; addSubParticle('/project/components/Features/Hub/components/shared/HubContent.jsx')"
+docker-compose run particle-graph python -c "from addParticle import addParticle; addParticle('/project/components/Features/Hub/components/shared/HubContent.jsx')"
 
 Expect: HubContent.jsx gets:
 javascript
 
-export const SubParticle = {
+export const Particle = {
   "purpose": "Handles hubcontent functionality",
   "props": ["title", "sections"],
   "hooks": [],
@@ -206,12 +206,12 @@ export const SubParticle = {
 Full Graph:
 bash
 
-docker-compose run particle-graph python -c "from addSubParticle import addAllSubParticle; from exportGraph import exportGraph; addAllSubParticle('/project'); exportGraph(['app', 'components', 'lib'])"
+docker-compose run particle-graph python -c "from addParticle import addAllParticle; from exportGraph import exportGraph; addAllParticle('/project'); exportGraph(['app', 'components', 'lib'])"
 
 Expect: 154 files parsed, full_codebase_graph.json in /project/particle-graph.
 
 6. Validation
-Logs: Check particle_utils.logger—“Added SubParticle to /path” or errors.
+Logs: Check particle_utils.logger—“Added Particle to /path” or errors.
 
 Graph: Open full_codebase_graph.json—props, hooks, logic should reflect GetReal’s intent.
 
@@ -258,7 +258,7 @@ babel_parser.js—Babel parsing logic.
 
 Dockerfile.babel—Node image.
 
-addSubParticle.py—Subprocess call.
+addParticle.py—Subprocess call.
 
 docker-compose.yml—Two-container glue.
 
@@ -266,7 +266,7 @@ Build & Run: docker-compose up --build.
 
 Test: Single file → full graph.
 
-Check: Logs, SubParticles, graph—95%+ relevancy?
+Check: Logs, Particles, graph—95%+ relevancy?
 
 
 __________
@@ -286,7 +286,7 @@ Path: /Users/Thy/Particle-graph/babel_parser.js.
 
 Content: (Already shared—parses file, returns JSON with purpose, props, hooks, calls, key_logic, depends_on).
 
-Key: Matches your generate_subparticle output—Babel handles all extraction.
+Key: Matches your generate_Particle output—Babel handles all extraction.
 
 Dockerfile.babel:
 Path: /Users/Thy/Particle-graph/Dockerfile.babel.
@@ -307,21 +307,21 @@ cd /Users/Thy/Particle-graph
 docker build -f Dockerfile.babel -t babel-parser .
 
 2. Update Particle-Graph MCP
-addSubParticle.py (reworked):
-Path: /Users/Thy/Particle-graph/addSubParticle.py.
+addParticle.py (reworked):
+Path: /Users/Thy/Particle-graph/addParticle.py.
 
 Content:
 python
 
 import subprocess
-from file_handler import read_file, write_subparticle
+from file_handler import read_file, write_Particle
 from particle_utils import logger
 import json
 import os
 
-def generate_subparticle(file_path: str = None, rich: bool = True) -> dict:
+def generate_Particle(file_path: str = None, rich: bool = True) -> dict:
     """
-    Generate SubParticle for a given file using Babel Docker.
+    Generate Particle for a given file using Babel Docker.
     """
     if not file_path:
         return {"error": "No file_path provided"}
@@ -353,7 +353,7 @@ def generate_subparticle(file_path: str = None, rich: bool = True) -> dict:
     key_logic = context.get("key_logic", [])
     depends_on = context.get("depends_on", [])
 
-    export_str, error = write_subparticle(file_path, context)
+    export_str, error = write_Particle(file_path, context)
     if error:
         return error
 
@@ -366,16 +366,16 @@ def generate_subparticle(file_path: str = None, rich: bool = True) -> dict:
         "summary": summary,
         "status": "OK",
         "isError": False,
-        "note": "SubParticle applied directly to file",
+        "note": "Particle applied directly to file",
         "post_action": "read"
     }
 
-def addSubParticle(file_path: str = None, rich: bool = True) -> dict:
-    return generate_subparticle(file_path, rich=rich)
+def addParticle(file_path: str = None, rich: bool = True) -> dict:
+    return generate_Particle(file_path, rich=rich)
 
-def addAllSubParticle(root_dir: str = "/project", rich: bool = True) -> dict:
+def addAllParticle(root_dir: str = "/project", rich: bool = True) -> dict:
     """
-    Generate SubParticles for all .jsx/.js files in the root directory, respecting .gitignore.
+    Generate Particles for all .jsx/.js files in the root directory, respecting .gitignore.
     """
     from pathlib import Path
     import pathspec
@@ -403,12 +403,12 @@ def addAllSubParticle(root_dir: str = "/project", rich: bool = True) -> dict:
                     continue
                 
                 try:
-                    result = generate_subparticle(str(file_path), rich)  # Use absolute path
+                    result = generate_Particle(str(file_path), rich)  # Use absolute path
                     if result.get("isError", True):
                         errors.append(f"{rel_path}: {result['error']}")
                     else:
                         modified_count += 1
-                        logger.info(f"SubParticled: {rel_path}")
+                        logger.info(f"Particled: {rel_path}")
                 except Exception as e:
                     errors.append(f"{rel_path}: {e}")
 
@@ -422,18 +422,18 @@ def addAllSubParticle(root_dir: str = "/project", rich: bool = True) -> dict:
         "summary": summary,
         "status": status,
         "isError": len(errors) > 0,
-        "note": f"SubParticles applied to {modified_count} files in {root_dir}"
+        "note": f"Particles applied to {modified_count} files in {root_dir}"
     }
 
 if __name__ == "__main__":
-    addSubParticle("/Users/Thy/today/components/Features/Hub/components/shared/HubContent.jsx")
+    addParticle("/Users/Thy/today/components/Features/Hub/components/shared/HubContent.jsx")
 
 Changes:
 Drop imports for prop_parser, hook_analyzer, etc.—Babel does it all.
 
 Subprocess calls Babel Docker—file path handoff.
 
-Keep write_subparticle, logger, addAllSubParticle logic—structure intact.
+Keep write_Particle, logger, addAllParticle logic—structure intact.
 
 Dockerfile (updated):
 Path: /Users/Thy/Particle-graph/Dockerfile.
@@ -443,7 +443,7 @@ dockerfile
 
 FROM python:3.10
 WORKDIR /app
-COPY server.py particle_utils.py createParticle.py loadGraph.py listGraph.py updateParticle.py exportGraph.py deleteParticle.py addSubParticle.py list_dir.py check_root.py tech_stack.py prop_parser.py hook_analyzer.py call_detector.py logic_inferer.py dependency_tracker.py context_builder.py file_handler.py populate_and_graph.py populate.py ./
+COPY server.py particle_utils.py createParticle.py loadGraph.py listGraph.py updateParticle.py exportGraph.py deleteParticle.py addParticle.py list_dir.py check_root.py tech_stack.py prop_parser.py hook_analyzer.py call_detector.py logic_inferer.py dependency_tracker.py context_builder.py file_handler.py populate_and_graph.py populate.py ./
 RUN pip install fastmcp lark pathspec
 EXPOSE 8000
 CMD ["python", "server.py"]
@@ -480,17 +480,17 @@ docker-compose up --build
 Test Single File:
 bash
 
-docker-compose run particle-graph python -c "from addSubParticle import addSubParticle; addSubParticle('/project/components/Features/Hub/components/shared/HubContent.jsx')"
+docker-compose run particle-graph python -c "from addParticle import addParticle; addParticle('/project/components/Features/Hub/components/shared/HubContent.jsx')"
 
 Full Graph:
 bash
 
-docker-compose run particle-graph python -c "from addSubParticle import addAllSubParticle; from exportGraph import exportGraph; addAllSubParticle('/project'); exportGraph(['app', 'components', 'lib'])"
+docker-compose run particle-graph python -c "from addParticle import addAllParticle; from exportGraph import exportGraph; addAllParticle('/project'); exportGraph(['app', 'components', 'lib'])"
 
 5. Validate
-Logs: Check logger—“SubParticled: ...” or errors.
+Logs: Check logger—“Particled: ...” or errors.
 
-File: HubContent.jsx—SubParticle with props, logic, etc.
+File: HubContent.jsx—Particle with props, logic, etc.
 
 Graph: full_codebase_graph.json—154 files, deep insights.
 
@@ -503,7 +503,7 @@ MCP: fastmcp, lark, pathspec.
 
 Babel: @babel/parser (Docker-only).
 
-Backup: Save old addSubParticle.py—Tree-sitter’s your fallback.
+Backup: Save old addParticle.py—Tree-sitter’s your fallback.
 
 Troubleshooting
 Subprocess Fail: Test docker run -v /Users/Thy/today:/app babel-parser /app/path—check stderr.
@@ -515,14 +515,14 @@ Write Fail: file_handler.py perms—/project writable?
 Why It Fits
 Relevancy: Babel’s 95%+—replaces your modular parsers with one shot.
 
-Structure: Keeps generate_subparticle, addAllSubParticle—just swaps the engine.
+Structure: Keeps generate_Particle, addAllParticle—just swaps the engine.
 
 Sync: Subprocess—simple, accurate, file path handoff.
 
 Next Steps
 Add: babel_parser.js, Dockerfile.babel, docker-compose.yml.
 
-Update: addSubParticle.py, Dockerfile.
+Update: addParticle.py, Dockerfile.
 
 Run: docker-compose up --build, then test.
 
