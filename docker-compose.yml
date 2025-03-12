@@ -1,5 +1,5 @@
 services:
-  particule-graph:
+  particle-graph:
     build: .
     volumes:
       - ${GETREAL_PATH}:/project

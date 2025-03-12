@@ -1,16 +1,16 @@
 import subprocess
-from file_handler import read_file, write_subparticule
-from particule_utils import logger
+from file_handler import read_file, write_subparticle
+from particle_utils import logger
 import json
 import os
 from pathlib import Path
 
 PROJECT_ROOT = "/project"
 
-def generate_subparticule(file_path: str = None, rich: bool = True) -> dict:
-    logger.info(f"Starting generate_subparticule with file_path: {file_path}")
+def generate_subparticle(file_path: str = None, rich: bool = True) -> dict:
+    logger.info(f"Starting generate_subparticle with file_path: {file_path}")
     if not file_path:
-        logger.error("No file_path provided to generate_subparticule")
+        logger.error("No file_path provided to generate_subparticle")
         return {"error": "No file_path provided"}
 
     # Handle paths that might contain the host machine path
@@ -57,7 +57,7 @@ def generate_subparticule(file_path: str = None, rich: bool = True) -> dict:
         filtered_context = {k: v for k, v in context.items() if not (isinstance(v, list) and len(v) == 0)}
         logger.debug(f"Filtered context: {json.dumps(filtered_context)}")
         
-        export_str, error = write_subparticule(relative_path, filtered_context)
+        export_str, error = write_subparticle(relative_path, filtered_context)
         if error:
             logger.error(f"Write failed for {relative_path}: {error}")
             return {"error": f"Write failed: {error}"}
@@ -78,7 +78,7 @@ def generate_subparticule(file_path: str = None, rich: bool = True) -> dict:
             "summary": summary,
             "status": "OK",
             "isError": False,
-            "note": "SubParticule applied directly to file",
+            "note": "SubParticle applied directly to file",
             "post_action": "read"
         }
     except subprocess.CalledProcessError as e:
@@ -88,16 +88,16 @@ def generate_subparticule(file_path: str = None, rich: bool = True) -> dict:
         logger.error(f"Invalid JSON from Babel for {relative_path}: {e}")
         return {"error": f"Invalid JSON: {e}"}
 
-def addSubParticule(file_path: str = None, rich: bool = True) -> dict:
+def addSubParticle(file_path: str = None, rich: bool = True) -> dict:
     """
-    Analyze a single file and add a SubParticule metadata export to it.
+    Analyze a single file and add a SubParticle metadata export to it.
     
     This function parses a JavaScript/JSX file to extract component props, hooks,
     API calls, key logic, and dependencies, then writes this metadata back to the
-    file as an 'export const SubParticule = {...}' statement.
+    file as an 'export const SubParticle = {...}' statement.
     
-    Unlike createParticule which creates a graph for an entire feature,
-    addSubParticule focuses on a single file only.
+    Unlike createParticle which creates a graph for an entire feature,
+    addSubParticle focuses on a single file only.
     
     Special parameters:
         file_path = "all" - will process all files in the project root
@@ -108,23 +108,23 @@ def addSubParticule(file_path: str = None, rich: bool = True) -> dict:
         rich: If True, include detailed metadata including key_logic and depends_on
         
     Returns:
-        dict: Result containing the SubParticule data and operation status
+        dict: Result containing the SubParticle data and operation status
     """
-    logger.info(f"*** ADDSUB PARTICULE FUNCTION EXPLICITLY CALLED with {file_path} ***")
+    logger.info(f"*** ADDSUB PARTICLE FUNCTION EXPLICITLY CALLED with {file_path} ***")
     
     # Special case: handle "all" parameter
     if file_path and file_path.lower() in ("all", "codebase"):
-        logger.info("Delegating to addAllSubParticule function")
-        return addAllSubParticule(rich=rich)
+        logger.info("Delegating to addAllSubParticle function")
+        return addAllSubParticle(rich=rich)
         
-    return generate_subparticule(file_path, rich=rich)
+    return generate_subparticle(file_path, rich=rich)
 
-def addAllSubParticule(root_dir: str = PROJECT_ROOT, rich: bool = True) -> dict:
+def addAllSubParticle(root_dir: str = PROJECT_ROOT, rich: bool = True) -> dict:
     """
-    Analyze all JavaScript/JSX files in a directory and add SubParticule metadata to each.
+    Analyze all JavaScript/JSX files in a directory and add SubParticle metadata to each.
     
     This function recursively walks through the specified directory, finds all JS/JSX
-    files, and adds SubParticule metadata to each file by calling generate_subparticule.
+    files, and adds SubParticle metadata to each file by calling generate_subparticle.
     It respects .gitignore files to skip files that should be ignored.
     
     Args:
@@ -137,7 +137,7 @@ def addAllSubParticule(root_dir: str = PROJECT_ROOT, rich: bool = True) -> dict:
     from pathlib import Path
     import pathspec
 
-    logger.info(f"*** ADDALL SUBPARTICULE FUNCTION EXPLICITLY CALLED with root_dir: {root_dir} ***")
+    logger.info(f"*** ADDALL SUBPARTICLE FUNCTION EXPLICITLY CALLED with root_dir: {root_dir} ***")
     
     # Handle paths that might contain the host machine path
     host_prefix = "/Users/Thy/Today"  # No trailing slash to match exact path too
@@ -183,12 +183,12 @@ def addAllSubParticule(root_dir: str = PROJECT_ROOT, rich: bool = True) -> dict:
                     logger.debug(f"Skipped (gitignore): {rel_path}")
                 else:
                     try:
-                        result = generate_subparticule(str(file_path), rich)
+                        result = generate_subparticle(str(file_path), rich)
                         if result.get("isError", True):
                             errors.append(f"{rel_path}: {result.get('error', 'Unknown error')}")
                         else:
                             modified_count += 1
-                            logger.info(f"SubParticuled: {rel_path}")
+                            logger.info(f"SubParticled: {rel_path}")
                     except Exception as e:
                         errors.append(f"{rel_path}: {e}")
 
@@ -198,15 +198,15 @@ def addAllSubParticule(root_dir: str = PROJECT_ROOT, rich: bool = True) -> dict:
     summary = f"Modified {modified_count} files"
     if errors:
         summary += f", {len(errors)} errors: {', '.join(errors[:3])}" + (len(errors) > 3 and "..." or "")
-    logger.info(f"addAllSubParticule summary: {summary}")
+    logger.info(f"addAllSubParticle summary: {summary}")
 
     return {
         "content": [{"type": "text", "text": summary}],
         "summary": summary,
         "status": status,
         "isError": len(errors) > 0,
-        "note": f"SubParticules applied to {modified_count} files in {root_dir}"
+        "note": f"SubParticles applied to {modified_count} files in {root_dir}"
     }
 
 if __name__ == "__main__":
-    addSubParticule("components/Features/Hub/components/shared/HubContent.jsx")
+    addSubParticle("components/Features/Hub/components/shared/HubContent.jsx")

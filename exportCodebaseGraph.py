@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 from pathlib import Path
-from particule_utils import app_path, logger
+from particle_utils import app_path, logger
 from loadCodebaseGraph import loadCodebaseGraph
 
 def filter_empty_arrays(obj):
@@ -20,13 +20,13 @@ def exportCodebaseGraph() -> dict:
     # Timestamp for filename
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     filename = f"codebase_graph_{timestamp}.json"
-    output_path = Path(app_path) / "particule-graph" / filename
+    output_path = Path(app_path) / "particle-graph" / filename
     output_path.parent.mkdir(exist_ok=True)
 
     # Count only processed files
     file_count = len(manifest.get("files", {}))
     manifest["file_count"] = file_count
-    manifest["js_files_total"] = file_count  # Only SubParticule'd files
+    manifest["js_files_total"] = file_count  # Only SubParticle'd files
     manifest["coverage_percentage"] = 100.0  # All relevant files covered
     manifest["exported_at"] = datetime.utcnow().isoformat() + "Z"
     manifest["export_filename"] = filename

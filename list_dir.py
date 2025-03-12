@@ -1,6 +1,6 @@
 import os 
 from pathlib import Path
-from particule_utils import app_path, logger
+from particle_utils import app_path, logger
 
 def list_dir(path: str) -> dict:
     logger.info(f"Received list_dir request with path: {path}")

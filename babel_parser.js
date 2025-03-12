@@ -58,7 +58,7 @@ try {
     for (const key in node) if (node[key] && typeof node[key] === 'object') walk(node[key]);
   }
 
-  function enhanceWalk(node, subParticule) {
+  function enhanceWalk(node, subParticle) {
     if (!node) return;
 
     if (node.type === 'VariableDeclarator' && node.init?.callee?.name?.startsWith('use')) {
@@ -143,11 +143,11 @@ try {
   walk(ast);
   if (process.env.RICH_PARSING) enhanceWalk(ast, { props, hooks, calls, keyLogic, jsx });
 
-  const existingMatch = code.match(/export const SubParticule = \{[\s\S]*?\};/);
+  const existingMatch = code.match(/export const SubParticle = \{[\s\S]*?\};/);
   let existing = {};
   if (existingMatch) {
     try {
-      const cleanedCode = existingMatch[0].replace('export const SubParticule =', '').trim().replace(/;$/, '');
+      const cleanedCode = existingMatch[0].replace('export const SubParticle =', '').trim().replace(/;$/, '');
       existing = eval(`(${cleanedCode})`);
       purpose = existing.purpose || purpose;
       props = [...new Set([...(existing.props || []), ...props])];
@@ -157,11 +157,11 @@ try {
       dependsOn = [...new Set([...(existing.depends_on || []), ...dependsOn])];
       jsx = [...new Set([...(existing.jsx || []), ...jsx])];
     } catch (e) {
-      console.error(`Failed to parse existing SubParticule in ${filePath}: ${e.message}`);
+      console.error(`Failed to parse existing SubParticle in ${filePath}: ${e.message}`);
     }
   }
 
-  const subParticule = {
+  const subParticle = {
     purpose,
     props: props.filter(Boolean),
     hooks: [...new Set(hooks)],
@@ -171,7 +171,7 @@ try {
     ...(process.env.RICH_PARSING && { jsx: [...new Set(jsx)] })
   };
 
-  console.log(JSON.stringify(subParticule, null, 2)); // Pretty-print for safety
+  console.log(JSON.stringify(subParticle, null, 2)); // Pretty-print for safety
 } catch (error) {
   console.error(`Error parsing ${filePath}: ${error.message}`);
   process.exit(1);

@@ -6,9 +6,9 @@ import fnmatch
 from pathlib import Path
 from typing import Dict, List, Set, Optional
 
-app_path = os.getenv("PARTICULE_PATH", "/project")
-particule_cache: Dict[str, dict] = {}
-logger = logging.getLogger("ParticuleGraph")
+app_path = os.getenv("PARTICLE_PATH", "/project")
+particle_cache: Dict[str, dict] = {}
+logger = logging.getLogger("ParticleGraph")
 
 def load_gitignore_patterns(root_path: str) -> Dict[Path, List[str]]:
     """
@@ -75,8 +75,8 @@ def infer_file_type(file_path: str) -> str:
         return "state"
     return "file"
 
-def extract_particule_logic(file_path: str) -> dict:
-    """Extract structured context (purpose, props, calls) from a file's SubParticule export."""
+def extract_particle_logic(file_path: str) -> dict:
+    """Extract structured context (purpose, props, calls) from a file's SubParticle export."""
     full_path = Path(app_path) / file_path
     if not full_path.exists() or full_path.is_dir():
         return None
@@ -85,8 +85,8 @@ def extract_particule_logic(file_path: str) -> dict:
         with open(full_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Parse export const SubParticule
-        context_match = re.search(r"export\s+const\s+SubParticule\s*=\s*(\{.*?\});", content, re.DOTALL)
+        # Parse export const SubParticle
+        context_match = re.search(r"export\s+const\s+SubParticle\s*=\s*(\{.*?\});", content, re.DOTALL)
         if context_match:
             try:
                 context_str = context_match.group(1).replace("'", '"')
@@ -100,7 +100,7 @@ def extract_particule_logic(file_path: str) -> dict:
                     "depends_on": context.get("depends_on", [])
                 }
             except Exception as e:
-                logger.debug(f"Invalid SubParticule in {file_path}: {e}")
+                logger.debug(f"Invalid SubParticle in {file_path}: {e}")
 
         # Fallback: Infer from code
         context = {"purpose": "", "props": [], "hooks": [], "calls": []}

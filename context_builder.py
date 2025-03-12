@@ -1,5 +1,5 @@
 from pathlib import Path
-from particule_utils import logger
+from particle_utils import logger
 
 def infer_purpose(file_path: str, content: str, rich: bool = True) -> str:
     """Infer the purpose of the component based on file name and content."""
@@ -19,8 +19,8 @@ def infer_purpose(file_path: str, content: str, rich: bool = True) -> str:
         purpose = f"Handles {stem} functionality"
     return purpose
 
-def build_subparticule(file_path: str, content: str, props: list, hooks: list, calls: list, key_logic: list, depends_on: list, rich: bool = True) -> dict:
-    """Assemble the SubParticule context."""
+def build_subparticle(file_path: str, content: str, props: list, hooks: list, calls: list, key_logic: list, depends_on: list, rich: bool = True) -> dict:
+    """Assemble the SubParticle context."""
     purpose = infer_purpose(file_path, content, rich)
     context = {"purpose": purpose}
 
@@ -35,5 +35,5 @@ def build_subparticule(file_path: str, content: str, props: list, hooks: list, c
     if depends_on:
         context["depends_on"] = depends_on
 
-    logger.debug(f"Built SubParticule context: {context}")
+    logger.debug(f"Built SubParticle context: {context}")
     return context

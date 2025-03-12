@@ -1,5 +1,5 @@
 import re
-from particule_utils import logger
+from particle_utils import logger
 
 def extract_calls(content):
     """Extract API calls from content."""

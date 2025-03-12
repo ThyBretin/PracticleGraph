@@ -1,5 +1,5 @@
 import re  # Make sure this is at the top
-from particule_utils import logger
+from particle_utils import logger
 
 def infer_hook_purpose(hook_name: str, content: str) -> str:
     """Hybrid: Predefined for common hooks, contextual for customs."""

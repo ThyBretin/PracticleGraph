@@ -3,23 +3,23 @@ import os
 import fnmatch
 from datetime import datetime
 from pathlib import Path
-from particule_utils import (
-    app_path, logger, particule_cache, load_gitignore_patterns, infer_file_type,
-    extract_particule_logic
+from particle_utils import (
+    app_path, logger, particle_cache, load_gitignore_patterns, infer_file_type,
+    extract_particle_logic
 )
 from tech_stack import get_tech_stack
-from createCodebaseParticule import createCodebaseParticule
+from createCodebaseParticle import createCodebaseParticle
 
-def createParticule(feature_path: str) -> dict: 
+def createParticle(feature_path: str) -> dict: 
     """
-    Create a Particule Graph for a feature.
+    Create a Particle Graph for a feature.
     
     Special values:
     - "codebase" or "all": Create a graph for the entire codebase
     """
     # Handle special codebase parameter with delegation pattern
     if feature_path.lower() in ("codebase", "all"):
-        return createCodebaseParticule()
+        return createCodebaseParticle()
         
     primary_entities = []
     shared_entities = []
@@ -53,7 +53,7 @@ def createParticule(feature_path: str) -> dict:
                 if entry.is_dir():
                     crawl_tree(entry, depth + 1)
                 elif entry.is_file() and not entry.name.startswith("."):
-                    context = extract_particule_logic(entry_rel_path)
+                    context = extract_particle_logic(entry_rel_path)
                     entity = {
                         "path": entry_rel_path,
                         "type": infer_file_type(entry_rel_path),
@@ -84,6 +84,6 @@ def createParticule(feature_path: str) -> dict:
         "tech_stack": get_tech_stack(all_entities),
         "files": {"primary": primary_entities, "shared": shared_entities}
     }
-    particule_cache[manifest["feature"]] = manifest
+    particle_cache[manifest["feature"]] = manifest
     logger.info(f"Created manifest for {manifest['feature']}")
     return manifest

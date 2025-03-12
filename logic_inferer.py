@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from particule_utils import logger
+from particle_utils import logger
 
 def extract_key_logic(content, file_path=None, rich=True):
     stem = Path(file_path).stem.lower() if file_path else ""

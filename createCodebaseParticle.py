@@ -3,13 +3,13 @@ import json
 import fnmatch
 import os
 from datetime import datetime
-from particule_utils import app_path, logger, particule_cache, load_gitignore_patterns
-from particule_utils import extract_particule_logic
+from particle_utils import app_path, logger, particle_cache, load_gitignore_patterns
+from particle_utils import extract_particle_logic
 from tech_stack import get_tech_stack
 
-def createCodebaseParticule() -> dict:
-    """Create a Particule Graph for the entire codebase, respecting gitignore patterns."""
-    logger.info("Creating codebase-wide Particule Graph (non-destructive)")
+def createCodebaseParticle() -> dict:
+    """Create a Particle Graph for the entire codebase, respecting gitignore patterns."""
+    logger.info("Creating codebase-wide Particle Graph (non-destructive)")
     
     root_dir = "/project"
     files = {}
@@ -84,18 +84,18 @@ def createCodebaseParticule() -> dict:
                 # Add to entities for tech stack analysis 
                 entities.append({"path": rel_path_str, "type": "file"})
                 
-                particule_data = extract_particule_logic(rel_path_str)
-                if particule_data:
-                    particule_data = {k: v for k, v in particule_data.items() if v is not None and v != []}
-                    files[rel_path_str] = particule_data
+                particle_data = extract_particle_logic(rel_path_str)
+                if particle_data:
+                    particle_data = {k: v for k, v in particle_data.items() if v is not None and v != []}
+                    files[rel_path_str] = particle_data
                     file_count += 1
                     
                     if 'app/(routes)/' in rel_path_str or 'app/(shared)/' in rel_path_str:
-                        routes[rel_path_str] = particule_data
+                        routes[rel_path_str] = particle_data
                     elif 'supabase' in rel_path_str or '.store' in rel_path_str:
-                        data[rel_path_str] = particule_data
+                        data[rel_path_str] = particle_data
                     else:
-                        components[rel_path_str] = particule_data
+                        components[rel_path_str] = particle_data
         
         # Process tech stack properly using root package.json and our tech_stack module
         if root_package_json:
@@ -113,14 +113,14 @@ def createCodebaseParticule() -> dict:
         
         if file_count == 0:
             guidance = (
-                "No SubParticule metadata found in codebase. To add metadata:\n"
-                "1. Run 'addSubParticule(file_path)' on individual files\n"
-                "2. Or run 'addAllSubParticule()' to process all JS/JSX files"
+                "No SubParticle metadata found in codebase. To add metadata:\n"
+                "1. Run 'addSubParticle(file_path)' on individual files\n"
+                "2. Or run 'addAllSubParticle()' to process all JS/JSX files"
             )
             logger.warning(guidance)
             return {
                 "content": [{"type": "text", "text": guidance}],
-                "summary": "No SubParticules found in codebase",
+                "summary": "No SubParticles found in codebase",
                 "status": "ERROR",
                 "isError": True,
                 "error": guidance
@@ -220,10 +220,10 @@ def createCodebaseParticule() -> dict:
                 "error": f"Error creating manifest: {e}"
             }
         
-        particule_cache["__codebase__"] = manifest
+        particle_cache["__codebase__"] = manifest
         
-        logger.info(f"Created codebase-wide Particule Graph with {file_count}/{js_files_total} files ({manifest['coverage_percentage']}% coverage)")
-        summary = f"Created codebase Particule containing metadata for {file_count} files (out of {js_files_total} JS/JSX files)"
+        logger.info(f"Created codebase-wide Particle Graph with {file_count}/{js_files_total} files ({manifest['coverage_percentage']}% coverage)")
+        summary = f"Created codebase Particle containing metadata for {file_count} files (out of {js_files_total} JS/JSX files)"
         
         return {
             "content": [{"type": "text", "text": summary}],
@@ -232,11 +232,11 @@ def createCodebaseParticule() -> dict:
             "isError": False
         }
     except Exception as e:
-        error_msg = f"Error creating codebase Particule: {str(e)}"
+        error_msg = f"Error creating codebase Particle: {str(e)}"
         logger.error(error_msg)
         return {
             "content": [{"type": "text", "text": error_msg}],
-            "summary": "Error creating codebase Particule",
+            "summary": "Error creating codebase Particle",
             "status": "ERROR",
             "isError": True,
             "error": error_msg

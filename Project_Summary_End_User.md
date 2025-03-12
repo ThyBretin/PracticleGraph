@@ -1,4 +1,4 @@
-# Particule-Graph: AI-Optimized Codebase Knowledge
+# Particle-Graph: AI-Optimized Codebase Knowledge
 
 ## The Problem: Building Apps Shouldn't Be This Hard
 
@@ -10,9 +10,9 @@ If you've ever tried to build an app—especially as someone without deep coding
 - **Token limits are restrictive**: You can't fit your entire codebase into AI's context window
 - **Knowledge is scattered**: Documentation, code, and business logic exist in separate places
 
-## What Is Particule-Graph?
+## What Is Particle-Graph?
 
-Particule-Graph is a breakthrough tool that transforms how non-developers and solo creators build complex applications with AI assistance. It analyzes your React Native/Expo codebase and creates a comprehensive, structured knowledge graph that AI can instantly understand—dramatically reducing the context you need to provide.
+Particle-Graph is a breakthrough tool that transforms how non-developers and solo creators build complex applications with AI assistance. It analyzes your React Native/Expo codebase and creates a comprehensive, structured knowledge graph that AI can instantly understand—dramatically reducing the context you need to provide.
 
 ## Key Benefits
 
@@ -30,9 +30,9 @@ Particule-Graph is a breakthrough tool that transforms how non-developers and so
 
 ## How It Works
 
-1. **Automated Analysis**: Particule-Graph scans your codebase to identify props, hooks, API calls, key logic patterns, and dependencies.
+1. **Automated Analysis**: Particle-Graph scans your codebase to identify props, hooks, API calls, key logic patterns, and dependencies.
 
-2. **Smart Metadata**: It embeds `SubParticule` objects—compact, information-dense summaries—directly into your files.
+2. **Smart Metadata**: It embeds `SubParticle` objects—compact, information-dense summaries—directly into your files.
 
 3. **Knowledge Graph**: It builds a comprehensive map of your entire application that AI can instantly comprehend.
 
@@ -43,23 +43,23 @@ Particule-Graph is a breakthrough tool that transforms how non-developers and so
 ### Feature-Based Approach
 Ideal for large applications with distinct feature modules:
 ```
-createParticule("FeatureName")  # Create a graph for a specific feature
+createParticle("FeatureName")  # Create a graph for a specific feature
 loadGraph("FeatureName")        # Load just what you need for current work
 ```
 
 ### Whole-Codebase Approach
 Perfect for giving AI complete context about your application:
 ```
-createParticule("codebase")     # Create a comprehensive graph of your entire codebase
+createParticle("codebase")     # Create a comprehensive graph of your entire codebase
 loadGraph("codebase")           # Load complete application context in one command
 ```
 
 ## Real-World Impact
 
-Particule-Graph was born from a real struggle: wanting to build a complex app (GetReal) as a non-developer working solely with AI. It addresses the fundamental challenge that even today's advanced AI needs structured context to be truly effective:
+Particle-Graph was born from a real struggle: wanting to build a complex app (GetReal) as a non-developer working solely with AI. It addresses the fundamental challenge that even today's advanced AI needs structured context to be truly effective:
 
 - **For Solo Creators**: Build complex applications without hiring a development team.
 - **For Non-Developers**: Focus on your vision instead of explaining technical details to AI.
 - **For Small Teams**: Maintain consistent knowledge even as team members come and go.
 
-With Particule-Graph, you're no longer limited by AI's context window or your own technical expertise—you can finally build the application you've envisioned without getting lost in code.
+With Particle-Graph, you're no longer limited by AI's context window or your own technical expertise—you can finally build the application you've envisioned without getting lost in code.

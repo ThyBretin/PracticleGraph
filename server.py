@@ -1,15 +1,15 @@
 import fastmcp
 import logging
-from particule_utils import logger
-from addSubParticule import addSubParticule, addAllSubParticule
-from createParticule import createParticule
-from createCodebaseParticule import createCodebaseParticule
+from particle_utils import logger
+from addSubParticle import addSubParticle, addAllSubParticle
+from createParticle import createParticle
+from createCodebaseParticle import createCodebaseParticle
 from loadCodebaseGraph import loadCodebaseGraph
 from exportCodebaseGraph import exportCodebaseGraph
 from loadGraph import loadGraph
 from listGraph import listGraph
-from updateParticule import updateParticule
-from deleteParticule import deleteParticule
+from updateParticle import updateParticle
+from deleteParticle import deleteParticle
 from exportGraph import exportGraph
 from list_dir import list_dir
 from check_root import check_root
@@ -17,20 +17,20 @@ from check_root import check_root
 logger.setLevel(logging.DEBUG)
 
 def main():
-    mcp = fastmcp.FastMCP("particule-graph")
-    mcp.tool()(createParticule)
-    mcp.tool()(updateParticule)
-    mcp.tool()(deleteParticule)
+    mcp = fastmcp.FastMCP("particle-graph")
+    mcp.tool()(createParticle)
+    mcp.tool()(updateParticle)
+    mcp.tool()(deleteParticle)
     mcp.tool()(listGraph)
     mcp.tool()(loadGraph)
     mcp.tool()(exportGraph)
-    mcp.tool()(addSubParticule)
-    mcp.tool()(addAllSubParticule)
+    mcp.tool()(addSubParticle)
+    mcp.tool()(addAllSubParticle)
     mcp.tool()(list_dir)
     mcp.tool()(check_root)
     
     # Register new codebase-wide tools
-    mcp.tool()(createCodebaseParticule)
+    mcp.tool()(createCodebaseParticle)
     mcp.tool()(loadCodebaseGraph)
     mcp.tool()(exportCodebaseGraph)
     

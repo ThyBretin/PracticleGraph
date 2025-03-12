@@ -1,8 +1,8 @@
-# Particule-Graph: Technical Architecture
+# Particle-Graph: Technical Architecture
 
 ## System Overview
 
-Particule-Graph is a codebase analysis tool that automatically generates metadata for React Native/Expo components. It extracts props, hooks, API calls, key logic patterns, and dependencies, then embeds this information as structured `SubParticule` objects directly in source files. The system aggregates these objects to create comprehensive dependency graphs and tech stacks.
+Particle-Graph is a codebase analysis tool that automatically generates metadata for React Native/Expo components. It extracts props, hooks, API calls, key logic patterns, and dependencies, then embeds this information as structured `SubParticle` objects directly in source files. The system aggregates these objects to create comprehensive dependency graphs and tech stacks.
 
 ## Architecture
 
@@ -16,17 +16,17 @@ Particule-Graph is a codebase analysis tool that automatically generates metadat
 1. **Input Processing**: Path mapping between host and container environments
 2. **AST Parsing**: Babel parser extracts component metadata via abstract syntax tree analysis
 3. **Metadata Generation**: Builds JSON structure with purpose, props, hooks, calls, logic, dependencies
-4. **File Manipulation**: Embeds `SubParticule` objects directly in source files
+4. **File Manipulation**: Embeds `SubParticle` objects directly in source files
 
 ### Key Files
 
 - **babel_parser.js**: Node.js script using Babel AST to extract component metadata
-- **addSubParticule.py**: Handles single-file analysis with subprocess communication to Babel
-- **addAllSubParticule.py**: Implements recursive directory traversal with gitignore support
+- **addSubParticle.py**: Handles single-file analysis with subprocess communication to Babel
+- **addAllSubParticle.py**: Implements recursive directory traversal with gitignore support
 - **file_handler.py**: Manages file I/O with path translation and JSON formatting
-- **particule_utils.py**: Contains shared utilities and logging infrastructure
-- **createParticule.py**: Creates feature-based Particule Graphs by crawling directories
-- **createCodebaseParticule.py**: Creates whole-codebase Particule Graph from all available SubParticules
+- **particle_utils.py**: Contains shared utilities and logging infrastructure
+- **createParticle.py**: Creates feature-based Particle Graphs by crawling directories
+- **createCodebaseParticle.py**: Creates whole-codebase Particle Graph from all available SubParticles
 - **loadGraph.py**: Loads specific feature graphs with support for feature aggregation
 - **loadCodebaseGraph.py**: Loads the complete codebase graph with a single command
 - **exportGraph.py**: Exports feature-based graphs to JSON files
@@ -46,9 +46,9 @@ Particule-Graph is a codebase analysis tool that automatically generates metadat
 - Two-stage filtering approach (JS-side and Python-side) for reliability
 - JSON validation to ensure consistent output format
 
-### SubParticule Format
+### SubParticle Format
 ```javascript
-export const SubParticule = {
+export const SubParticle = {
   "purpose": "Component's inferred purpose",
   "props": ["prop1", "prop2"],       // Only present if non-empty
   "hooks": ["useState", "useEffect"], // Only present if non-empty
@@ -62,17 +62,17 @@ export const SubParticule = {
 
 ### Main Functions
 
-1. **addSubParticule(file_path, rich=True)**
+1. **addSubParticle(file_path, rich=True)**
    - Analyzes single file
    - Returns detailed operation status with JSON metadata
 
-2. **addAllSubParticule(root_dir="/project", rich=True)**
+2. **addAllSubParticle(root_dir="/project", rich=True)**
    - Processes all JS/JSX files in directory recursively
    - Handles path translation and respects gitignore
    - Returns summary with modified file count
 
-3. **createParticule(feature_path)**
-   - Creates a feature-based Particule Graph by crawling a specific directory
+3. **createParticle(feature_path)**
+   - Creates a feature-based Particle Graph by crawling a specific directory
    - Special values: "codebase" or "all" to create a whole-codebase graph
 
 4. **listGraph()**
@@ -89,7 +89,7 @@ export const SubParticule = {
 
 ## Feature-Based vs. Codebase-Wide Analysis
 
-Particule-Graph supports two complementary approaches to codebase analysis:
+Particle-Graph supports two complementary approaches to codebase analysis:
 
 1. **Feature-Based Workflow**:
    - Traditional approach organizing code by feature directories
@@ -100,7 +100,7 @@ Particule-Graph supports two complementary approaches to codebase analysis:
    - Repository-agnostic approach for any folder structure
    - Works with standard layouts (src/, components/, etc.)
    - Creates a single comprehensive graph of the entire codebase
-   - Commands: `createParticule("codebase")`, `loadGraph("codebase")`, `exportGraph("codebase")`
+   - Commands: `createParticle("codebase")`, `loadGraph("codebase")`, `exportGraph("codebase")`
 
 Both approaches share the same command interface with special parameter handling.
 
@@ -108,10 +108,10 @@ Both approaches share the same command interface with special parameter handling
 
 ```bash
 # Build the container
-docker build -t particule-graph .
+docker build -t particle-graph .
 
 # Run the MCP server with mounted volume
-docker run -m 2g -v /Users/Thy/Today:/project -i particule-graph
+docker run -m 2g -v /Users/Thy/Today:/project -i particle-graph
 ```
 
 ## Implementation Considerations
@@ -139,7 +139,7 @@ The current architecture has several strengths but also exhibits signs of techni
    - Missing type validation before accessing properties
 
 2. **Path Translation Complexity**: Multiple approaches to path translation create confusion:
-   - Inconsistent handling between addSubParticule and addAllSubParticule
+   - Inconsistent handling between addSubParticle and addAllSubParticle
    - Redundant path conversion logic scattered across files
 
 3. **Tech Stack Analysis**: Current implementation has robustness issues:
@@ -202,4 +202,4 @@ particle-graph/
 - **Versioned API**: Properly version the API for backward compatibility
 - **Telemetry**: Add optional usage statistics for error reporting
 
-Implementing these changes would significantly improve robustness, maintainability, and extensibility of the Particule-Graph project, while keeping its core functionality intact.
+Implementing these changes would significantly improve robustness, maintainability, and extensibility of the Particle-Graph project, while keeping its core functionality intact.

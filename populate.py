@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import re
-from addSubParticule import addSubParticule
+from addSubParticle import addSubParticle
 import pathspec
 
 def load_gitignore(root_dir):
@@ -11,10 +11,10 @@ def load_gitignore(root_dir):
             return pathspec.PathSpec.from_lines("gitwildmatch", f)
     return pathspec.PathSpec.from_lines("gitwildmatch", [])
 
-def remove_existing_subparticule(content):
-    return re.sub(r"^export const SubParticule = \{[^}]+\};\n\n?", "", content, flags=re.MULTILINE)
+def remove_existing_subparticle(content):
+    return re.sub(r"^export const SubParticle = \{[^}]+\};\n\n?", "", content, flags=re.MULTILINE)
 
-def populate_subparticules(root_dir="/project"):
+def populate_subparticles(root_dir="/project"):
     gitignore = load_gitignore(root_dir)
     root_path = Path(root_dir)
     modified_count = 0
@@ -30,20 +30,20 @@ def populate_subparticules(root_dir="/project"):
                     continue
                 
                 try:
-                    result = addSubParticule(str(rel_path))
+                    result = addSubParticle(str(rel_path))
                     if result["isError"]:
                         print(f"Failed {rel_path}: {result['error']}")
                         continue
                     
-                    subparticule = result["content"][0]["text"]
+                    subparticle = result["content"][0]["text"]
                     with open(file_path, "r+") as f:
                         content = f.read()
-                        content = remove_existing_subparticule(content)
+                        content = remove_existing_subparticle(content)
                         f.seek(0)
-                        f.write(f"{subparticule}\n{content}")
+                        f.write(f"{subparticle}\n{content}")
                         f.truncate()
                     
-                    print(f"SubParticuled: {rel_path}")
+                    print(f"SubParticled: {rel_path}")
                     modified_count += 1
                 except Exception as e:
                     print(f"Error {rel_path}: {e}")
@@ -51,4 +51,4 @@ def populate_subparticules(root_dir="/project"):
     print(f"Total files modified: {modified_count}")
 
 if __name__ == "__main__":
-    populate_subparticules("/project")
+    populate_subparticles("/project")

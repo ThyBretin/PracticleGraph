@@ -1,16 +1,16 @@
-from particule_utils import logger, particule_cache
+from particle_utils import logger, particle_cache
 
 def loadCodebaseGraph() -> dict:
     """
-    Load the codebase-wide Particule Graph.
+    Load the codebase-wide Particle Graph.
     Called from loadGraph when given 'codebase' parameter.
     
     Returns:
-        dict: The codebase Particule Graph or error message
+        dict: The codebase Particle Graph or error message
     """
-    if "__codebase__" in particule_cache:
-        logger.info("Loading codebase-wide Particule Graph")
-        codebase_graph = particule_cache["__codebase__"]
+    if "__codebase__" in particle_cache:
+        logger.info("Loading codebase-wide Particle Graph")
+        codebase_graph = particle_cache["__codebase__"]
         
         # Force correct stats
         file_count = len(codebase_graph.get("files", {}))
@@ -21,6 +21,6 @@ def loadCodebaseGraph() -> dict:
         logger.info(f"Loaded codebase graph with {file_count} files (100% coverage)")
         return codebase_graph
     else:
-        error_msg = "Codebase Particule Graph not found. Run createParticule('codebase') first."
+        error_msg = "Codebase Particle Graph not found. Run createParticle('codebase') first."
         logger.error(error_msg)
         return {"error": error_msg}

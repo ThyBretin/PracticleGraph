@@ -1,7 +1,7 @@
 import re
 from lark import Lark
 from tree_sitter import Language, Parser
-from particule_utils import logger
+from particle_utils import logger
 
 # Tree-sitter setup
 try:

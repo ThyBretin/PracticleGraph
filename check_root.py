@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import fnmatch
-from particule_utils import app_path, logger, load_gitignore_patterns
+from particle_utils import app_path, logger, load_gitignore_patterns
 
 def check_root() -> dict:
     root_path = Path(app_path)

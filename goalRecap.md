@@ -39,7 +39,7 @@ JSX: Count and summarize elements (e.g., "2 <Text>, 1 <Button>") for UI hints.
 Decoupling: Add a new enhanceMetadata function in babel_parser.js that runs post-parsing, controlled by a config flag (e.g., richParsing: true). Existing output stays unchanged unless the flag’s on.
 2. Filter and Structure Graph Output
 Objective: Make the graph prioritize routes, data, and behavior, reducing noise and highlighting structure.
-Approach: Tweak createCodebaseParticule.py and exportGraph.py with modular post-processing steps.
+Approach: Tweak createCodebaseParticle.py and exportGraph.py with modular post-processing steps.
 Steps:
 Filter Noise: Exclude node_modules/ and dist/ files unless explicitly needed (add a skipPatterns list in config).
 
@@ -61,7 +61,7 @@ Data sources (e.g., "Supabase tables: events, locations").
 
 Key patterns (e.g., "10 components use useRole").
 
-Decoupling: Write a postProcessGraph function in particule_utils.py, called optionally in exportGraph.py. Existing JSON structure remains; we just append or reorder.
+Decoupling: Write a postProcessGraph function in particle_utils.py, called optionally in exportGraph.py. Existing JSON structure remains; we just append or reorder.
 3. Validate with Key Example (NavigationBar)
 Objective: Test enhancements on a central, role-based, route-driven component like NavigationBar.jsx.
 Why: It’s a hub—ties routes (useRouter), roles (useRole), and UI (useAnimatedStyle), reflecting the app’s core.
@@ -77,11 +77,11 @@ UI behavior (e.g., scroll/animation hooks).
 
 Adjust parsing/output if it misses the story.
 
-Decoupling: Run this as a one-off test via addSubParticule.py with the new flag, no permanent changes yet.
+Decoupling: Run this as a one-off test via addSubParticle.py with the new flag, no permanent changes yet.
 4. Iterate and Expand
 Objective: Roll out enhancements codebase-wide once validated.
 Steps:
-Apply Babel enhancements to all files via addAllSubParticule.py.
+Apply Babel enhancements to all files via addAllSubParticle.py.
 
 Update graph generation to use new structure consistently.
 
@@ -91,7 +91,7 @@ If business logic gaps remain (e.g., "why roles?"), consider a lightweight, opti
 
 Implementation Guidelines
 Minimize Disruption:
-No rewriting existing babel_parser.js or addSubParticule.py logic—add new functions or optional branches.
+No rewriting existing babel_parser.js or addSubParticle.py logic—add new functions or optional branches.
 
 Use config flags (e.g., in server.py) to toggle enhancements, keeping old behavior as default.
 
@@ -105,17 +105,17 @@ babel_parser.js: To extend parsing.
 
 NavigationBar.jsx: For testing (please share this one!).
 
-addSubParticule.py, createCodebaseParticule.py, exportGraph.py: For integration.
+addSubParticle.py, createCodebaseParticle.py, exportGraph.py: For integration.
 
-Maybe particule_utils.py: For shared helpers.
+Maybe particle_utils.py: For shared helpers.
 
 I’ll ask if I need more—don’t want to overwhelm you, and the graph gives me plenty to start theorizing.
 
 Non-Coder Friendly:
-I’ll keep changes simple, documented, and reversible. You can review outputs (e.g., updated SubParticule for NavigationBar) without diving into code.
+I’ll keep changes simple, documented, and reversible. You can review outputs (e.g., updated SubParticle for NavigationBar) without diving into code.
 
 What I Think We Should Do Next
-Share NavigationBar.jsx: It’s the perfect guinea pig—central, complex, and story-rich. I’ll mock up what its enhanced SubParticule could look like based on the graph and our plan.
+Share NavigationBar.jsx: It’s the perfect guinea pig—central, complex, and story-rich. I’ll mock up what its enhanced SubParticle could look like based on the graph and our plan.
 
 Draft Babel Enhancements: I’ll propose a few parsing additions (props, route calls, detailed logic) without coding yet—just a spec.
 
@@ -132,7 +132,7 @@ _______
 
 
 Goal: The Best Context File Ever
-We want particule-graph to:
+We want particle-graph to:
 Tell 95% of the Story: Routes, data, logic, and business intent in one file.
 
 Be Agnostic: Extract everything from code, no human guesses.
@@ -202,7 +202,7 @@ Data Sources: "data": {"supabase": ["events"], "stores": ["eventState.js:useEven
 Key Patterns: "patterns": {"role_based": 10, "state_driven": 5} (counted from useRole, state machines).
 
 File-Level Detail:
-Keep SubParticule but enrich it:
+Keep SubParticle but enrich it:
 json
 
 "eventState.js": {
@@ -228,7 +228,7 @@ Filter node_modules/ and dist/ (add skipPatterns in server.py).
 
 Collapse empty fields (e.g., no "props": []).
 
-Adjustment Check: Current exportGraph.py aggregates files but miscounts (file_count: 0). We’ll need a fix in createCodebaseParticule.py to tally correctly.
+Adjustment Check: Current exportGraph.py aggregates files but miscounts (file_count: 0). We’ll need a fix in createCodebaseParticle.py to tally correctly.
 3. Connect the Dots Across the Codebase
 Objective: Make the graph a web of meaning, not just a list.
 Steps:
@@ -277,14 +277,14 @@ New babel_parser_enhancements.js with enhanceMetadata.
 
 Config flag: richParsing: true in server.py.
 
-Test via addSubParticule.py --rich.
+Test via addSubParticle.py --rich.
 
 Graph Tweaks:
 New graph_utils.py for postProcessGraph (e.g., app_story, dependencies).
 
 Update exportGraph.py to call it optionally.
 
-Fix file_count in createCodebaseParticule.py.
+Fix file_count in createCodebaseParticle.py.
 
 CRCT Inspirations:
 Dependency tracking in graph_utils.py.
@@ -305,7 +305,7 @@ graph_utils.py
 
 exportGraph.py
 
-createCodebaseParticule.py
+createCodebaseParticle.py
 
 NavigationBar.jsx (for validation)
 
@@ -345,5 +345,5 @@ Babel Note: Think we need a big parsing overhaul, or just tweaks?
 
 Next: Greenlight this plan, tweak it, or drop NavigationBar.jsx to test?
 
-I’m stoked—this feels like the blueprint for the best particule-graph ever. It’s got the depth of eventState.js, the breadth of your app, and a dash of CRCT’s smarts. Over to you—what’s your vibe?
+I’m stoked—this feels like the blueprint for the best particle-graph ever. It’s got the depth of eventState.js, the breadth of your app, and a dash of CRCT’s smarts. Over to you—what’s your vibe?
 
