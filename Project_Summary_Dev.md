@@ -32,6 +32,7 @@ Particule-Graph is a codebase analysis tool that automatically generates metadat
 - **exportGraph.py**: Exports feature-based graphs to JSON files
 - **exportCodebaseGraph.py**: Exports the entire codebase graph to a JSON file
 - **server.py**: MCP server entry point that registers analysis tools
+- **tech_stack.py**: Processes and categorizes dependencies from package.json files
 
 ## Technical Details
 
@@ -120,3 +121,85 @@ docker run -m 2g -v /Users/Thy/Today:/project -i particule-graph
 - Minimal external dependencies for long-term maintainability
 - Clear separation between parsing (Node.js) and orchestration (Python) layers
 - Delegation pattern for extending functionality without modifying core components
+
+## Current Architecture Analysis and Issues
+
+The current architecture has several strengths but also exhibits signs of technical debt that require attention:
+
+### Strengths
+- **Effective Modularity**: Clean separation between Node.js parsing and Python orchestration
+- **Docker Containerization**: Provides consistent environments across different host systems
+- **Flexible API**: Both file-specific and directory-wide analysis options
+- **Gitignore Support**: Respects standard development patterns for exclusions
+
+### Pain Points and Issues
+1. **Error Handling**: Many functions lack robust error handling, leading to crashes on edge cases:
+   - Index errors when processing route data
+   - Unhandled exceptions in sub-component processing
+   - Missing type validation before accessing properties
+
+2. **Path Translation Complexity**: Multiple approaches to path translation create confusion:
+   - Inconsistent handling between addSubParticule and addAllSubParticule
+   - Redundant path conversion logic scattered across files
+
+3. **Tech Stack Analysis**: Current implementation has robustness issues:
+   - Depends too heavily on package.json structure being consistent
+   - Single point of failure in dependency categorization
+
+4. **Code Organization**: Functionality is sometimes spread across multiple files in ways that make maintenance difficult:
+   - Key utility functions duplicated across files
+   - Inconsistent module interfaces
+
+## Proposed Architecture Improvements
+
+### 1. Code Structure Reorganization
+```
+particle-graph/
+├── src/
+│   ├── core/              # Core logic
+│   │   ├── parser.py      # Babel orchestration
+│   │   ├── file_handler.py# File I/O
+│   │   └── path_utils.py  # Path resolution
+│   ├── analysis/         # Analysis tools
+│   │   ├── component.py  # Component parsing
+│   │   ├── dependency.py # Dependency tracking
+│   │   └── tech_stack.py # Tech stack analysis
+│   ├── api/             # User-facing commands
+│   │   ├── add_particle.py  # addParticle()
+│   │   ├── graph.py        # createGraph(), loadGraph(), exportGraph()
+│   └── utils/              # Helpers
+│       ├── logging.py      # Logging
+│       ├── validation.py   # Input checks
+│       └── error_handling.py # Errors
+├── js/                    # JS parsing
+│   └── babel_parser.js    # AST parsing
+├── tests/                # Tests
+├── Dockerfile
+└── server.py             # MCP entry point
+```
+
+### 2. Defensive Programming Strategy
+- **Input Validation**: Implement validation for all public API functions
+- **Type Checking**: Add type annotations and runtime checks for critical code paths
+- **Consistent Error Handling**: Standardize error handling with custom exceptions
+- **Graceful Degradation**: Allow partial results when full analysis fails
+
+### 3. Technical Improvements
+- **Path Abstraction**: Create a dedicated PathResolver class to handle all path translations
+- **Caching Layer**: Implement smarter caching for parsed results
+- **Memory Efficiency**: Reduce redundant data structures
+- **Parallel Processing**: Add option for multi-threaded analysis of large codebases
+
+### 4. Documentation and Testing
+- **API Documentation**: Create comprehensive API docs for all public functions
+- **Architecture Diagram**: Develop visual representation of system components
+- **Test Suite**: Implement thorough unit and integration tests
+- **Example Workflows**: Document common usage patterns with examples
+
+### 5. Maintainability Focus
+- **Config-Based Approach**: Move hardcoded values to configuration files
+- **Plugin Architecture**: Enable extensions for custom analysis needs
+- **Versioned API**: Properly version the API for backward compatibility
+- **Telemetry**: Add optional usage statistics for error reporting
+
+Implementing these changes would significantly improve robustness, maintainability, and extensibility of the Particule-Graph project, while keeping its core functionality intact.
