@@ -24,7 +24,7 @@ COPY src/particle/js/babel_parser.js src/particle/js/
 COPY src/graph/tech_stack.py src/graph/aggregate_app_story.py src/graph/
 
 # Copy helpers
-COPY src/helpers/project_detector.py src/helpers/dir_scanner.py src/helpers/config_loader.py src/helpers/
+COPY src/helpers/project_detector.py src/helpers/dir_scanner.py src/helpers/config_loader.py src/helpers/gitignore_parser.py src/helpers/
 
 # Add app directory to Python path
 ENV PYTHONPATH=/app

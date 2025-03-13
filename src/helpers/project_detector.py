@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
-from src.particle.particle_support import app_path, logger, load_gitignore_patterns
+from src.particle.particle_support import app_path, logger
+from src.helpers.gitignore_parser import load_gitignore
 import fnmatch
 
 def check_root() -> dict:
     root_path = Path(app_path)
     logger.info(f"Checking root: {root_path} (exists: {root_path.exists()})")
-    gitignore_patterns = load_gitignore_patterns(app_path)
+    gitignore_patterns = load_gitignore(app_path, recursive=True)
     if not root_path.exists():
         return {"error": f"Root {app_path} does not exist"}
     entries = []

@@ -21,22 +21,6 @@ def filter_empty(obj):
         return [filter_empty(v) for v in obj if v not in ([], {}, None)]
     return obj
 
-def load_gitignore(root_dir):
-    """
-    Load and parse .gitignore file from the specified directory.
-    
-    Args:
-        root_dir: Directory containing .gitignore file
-        
-    Returns:
-        pathspec.PathSpec: Parsed gitignore patterns
-    """
-    gitignore_path = Path(root_dir) / ".gitignore"
-    if gitignore_path.exists():
-        with open(gitignore_path, "r") as f:
-            return pathspec.PathSpec.from_lines("gitwildmatch", f)
-    return pathspec.PathSpec.from_lines("gitwildmatch", [])
-
 def normalize_path(path: str) -> str:
     """
     Normalize path to handle host paths, absolute paths, and relative paths.

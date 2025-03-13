@@ -3,7 +3,7 @@ from pathlib import Path
 
 from src.particle.particle_generator import generate_particle
 from src.particle.particle_support import logger
-from src.core.utils import load_gitignore
+from src.helpers.gitignore_parser import load_gitignore
 
 def process_directory(root_dir: str, rich: bool = True) -> dict:
     """
