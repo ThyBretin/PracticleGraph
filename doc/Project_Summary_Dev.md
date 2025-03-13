@@ -155,31 +155,28 @@ The current architecture has several strengths but also exhibits signs of techni
 ### 1. Code Structure Reorganization
 ```
 Particle-Graph/
-├── server.py
-├── requirements.txt
-├── Dockerfile
-├── docker-compose.yml
-├── README.md
-├── src/
-│   ├── api/
-│   │   ├── add_particle.py
-│   │   ├── create_graph.py
-│   │   ├── delete_graph.py
-│   │   ├── export_graph.py
-│   │   ├── list_graph.py
-│   │   ├── load_graph.py
-│   │   └── update_graph.py
-│   ├── core/
-│   │   ├── dependency_tracker.py  # Your name
-│   │   ├── file_handler.py
-│   │   └── particle_utils.py
-│   ├── analysis/
-│   │   └── tech_stack.py
-│   └── utils/
-│       ├── check_root.py        # Keep for now
-│       ├── config_loader.py     # Add if not there
-│       └── list_dir.py          # Keep for now
-├── legacy/
+├── server.py                      # Main MCP server
+├── requirements.txt              # Python dependencies
+├── Dockerfile                    # Docker build (root-level convention)
+├── README.md                     # Project overview
+├── src/                          # Source code
+│   ├── api/                      # API endpoints
+│   │   ├── add_particle.py       # addParticle(path, recursive)
+│   │   ├── create_graph.py       # createGraph(path)
+│   │   ├── delete_graph.py       # deleteGraph(path)
+│   │   ├── export_graph.py       # exportGraph(path)
+│   │   ├── list_graph.py         # listGraph()
+│   │   ├── load_graph.py         # loadGraph(path)
+│   │   └── update_graph.py       # updateGraph(path)
+│   ├── core/                     # Core functionality
+│   │   ├── dependency.py         # Dependency tracking (renamed)
+│   │   ├── file_handler.py       # File I/O
+│   │   └── particle_utils.py     # Shared utils
+│   ├── analysis/                 # Analysis tools
+│   │   └── tech_stack.py         # Tech stack analysis
+│   └── utils/                    # Utilities
+│       └── config_loader.py      # Config loading (if used)
+├── legacy/                       # Pre-refactoring files
 │   ├── addParticle.py
 │   ├── addAllParticle.py
 │   ├── createParticle.py
@@ -190,13 +187,16 @@ Particle-Graph/
 │   ├── loadCodebaseGraph.py
 │   ├── deleteParticle.py
 │   ├── updateParticle.py
-├── js/
-│   └── babel_parser.js
-├── dev/
-│   └── debug_graph.py
-└── doc/
-    ├── Particle.md
-    ├── Project-Refactoring.md
+│   └── ...                      # Any other oldies
+├── js/                           # JS utilities
+│   └── babel_parser.js           # Babel AST parsing
+├── dev/                          # Development tools
+│   ├── debug_graph.py            # Debugging
+│   └── docker-compose.yml        # Optional multi-container setup
+└── doc/                          # Documentation
+    ├── Particle.md               # Particle format
+    ├── Project-Refactoring.md    # Refactoring notes
+    └── README.md                 # Optional duplicate or symlink
 ```
 
 ### 2. Defensive Programming Strategy

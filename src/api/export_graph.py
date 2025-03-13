@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.core.particle_utils import app_path, logger
-from src.api.load_graph import loadGraph  # Import loadGraph directly since it will be in root
+from src.api.load_graph import loadGraph
 
 def exportGraph(path: str) -> dict:
     """
@@ -19,30 +19,26 @@ def exportGraph(path: str) -> dict:
     """
     logger.info(f"Exporting Particle Graph for: {path}")
     
-    # First load the graph using our unified loadGraph function
-    manifest = loadGraph(path)
+    # Normalize path to lowercase feature name
+    feature_name = path.split("/")[-1].lower() if "," not in path else "_".join(p.lower() for p in path.split(","))
+    manifest = loadGraph(feature_name)
     if "error" in manifest:
+        logger.error(f"Failed to load graph for {feature_name}: {manifest['error']}")
         return {"error": manifest["error"]}
     
     # Handle special formatting for codebase graph
     is_codebase = path.lower() in ("codebase", "all")
     if is_codebase:
-        # Count only processed files
         file_count = len(manifest.get("files", {}))
         manifest["file_count"] = file_count
-        manifest["js_files_total"] = file_count  # Only Particle'd files
-        manifest["coverage_percentage"] = 100.0  # All relevant files covered
+        manifest["js_files_total"] = file_count
+        manifest["coverage_percentage"] = 100.0
         manifest["exported_at"] = datetime.utcnow().isoformat() + "Z"
-        
-        # Filter empty arrays in codebase graph to reduce size
         manifest = filter_empty_arrays(manifest)
-        
-        # Set filename for codebase
         timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         filename = f"codebase_graph_{timestamp}.json"
     else:
-        # Format filename based on features (single or aggregate)
-        feature_str = "_".join(manifest.get("features", [path])).lower()
+        feature_str = "_".join(manifest.get("features", [feature_name])).lower()
         timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         filename = f"{feature_str}_graph_{timestamp}.json" if not manifest.get("aggregate") else f"aggregate_{feature_str}_{timestamp}.json"
     
@@ -58,14 +54,12 @@ def exportGraph(path: str) -> dict:
     if is_codebase:
         file_count = manifest.get("file_count", 0)
         logger.info(f"Exported codebase graph ({file_count} files) to {output_path}")
-        
         summary = (
             f"The graph has been successfully exported to {output_path}. The export includes:\n\n"
             f"{file_count} files analyzed (100% of relevant JS/JSX files)\n"
             f"Complete structure of all components with metadata\n"
             f"Dependencies and relationships between components"
         )
-        
         return {
             "content": [{"type": "text", "text": summary}],
             "summary": summary,

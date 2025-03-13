@@ -28,19 +28,21 @@ try {
     logic: [],
     depends_on: [],
     jsx: [],
-    state_machine: null
+    state_machine: null,
+    used_by: [] // Placeholder—needs dependency_tracker.py
   };
 
   function walk(node) {
     if (!node) return;
 
-    // Props (top-level functions only)
+    // Props (top-level functions only, with defaults)
     if ((node.type === 'FunctionDeclaration' || node.type === 'ArrowFunctionExpression') && node.loc?.start.line <= 10) {
       node.params.forEach(param => {
         if (param.type === 'ObjectPattern') {
           particle.props = param.properties.map(p => ({
             name: p.key.name,
-            default: p.value?.type === 'AssignmentPattern' ? p.value.right.value : null
+            default: p.value?.type === 'AssignmentPattern' ? 
+              (p.value.right.value ?? p.value.right.name ?? null) : null
           }));
         } else if (param.type === 'Identifier') {
           particle.props = [{ name: param.name, default: null }];
@@ -67,7 +69,7 @@ try {
   function enhanceWalk(node) {
     if (!node) return;
 
-    // Rich Props (from hooks)
+    // Rich Props (from hooks destructuring)
     if (node.type === 'VariableDeclarator' && node.init?.callee?.name?.startsWith('use')) {
       if (node.id?.type === 'ObjectPattern') {
         node.id.properties.forEach(p => {
@@ -101,7 +103,7 @@ try {
       }
     }
 
-    // Logic (conditions + actions)
+    // Logic (conditions + detailed actions)
     if (node.type === 'IfStatement') {
       const test = node.test;
       let condition = '';
@@ -112,7 +114,16 @@ try {
         condition = `${left || 'unknown'} ${test.operator} ${right || 'unknown'}`;
       }
       if (condition && !condition.includes('unknown')) {
-        let action = node.consequent.type === 'BlockStatement' ? 'handles condition' : 'returns value';
+        let action = 'handles condition';
+        if (node.consequent.type === 'BlockStatement') {
+          node.consequent.body.forEach(stmt => {
+            if (stmt.type === 'ReturnStatement' && stmt.argument?.type === 'JSXElement') {
+              action = `renders ${stmt.argument.openingElement.name.name}`;
+            } else if (stmt.type === 'ExpressionStatement' && stmt.expression?.callee?.name === 'router.push') {
+              action = `navigates to ${stmt.expression.arguments[0]?.value || 'route'}`;
+            }
+          });
+        }
         particle.logic.push(`if ${condition} ${action}`);
       }
     }
@@ -123,7 +134,7 @@ try {
         name: node.id.name,
         states: node.init?.properties?.map(prop => ({
           name: prop.key.name,
-          transitions: []
+          transitions: [] // Placeholder—needs deeper parsing
         })) || []
       };
     }
@@ -148,6 +159,7 @@ try {
       particle.logic = [...new Set([...(existing.logic || existing.key_logic || []), ...particle.logic])];
       particle.depends_on = [...new Set([...(existing.depends_on || []), ...particle.depends_on])];
       particle.jsx = [...new Set([...(existing.jsx || []), ...particle.jsx])];
+      particle.state_machine = existing.state_machine || particle.state_machine;
     } catch (e) {
       console.error(`Failed to parse existing Particle in ${filePath}: ${e.message}`);
     }
