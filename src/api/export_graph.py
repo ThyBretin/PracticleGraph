@@ -2,8 +2,10 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from src.core.particle_utils import app_path, logger
+from src.core.particle_utils import logger
 from src.api.load_graph import loadGraph
+from src.core.utils import filter_empty
+from src.core.path_resolver import PathResolver
 
 def exportGraph(path: str) -> dict:
     """
@@ -34,7 +36,7 @@ def exportGraph(path: str) -> dict:
         manifest["js_files_total"] = file_count
         manifest["coverage_percentage"] = 100.0
         manifest["exported_at"] = datetime.utcnow().isoformat() + "Z"
-        manifest = filter_empty_arrays(manifest)
+        manifest = filter_empty(manifest)
         timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         filename = f"codebase_graph_{timestamp}.json"
     else:
@@ -42,13 +44,14 @@ def exportGraph(path: str) -> dict:
         timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         filename = f"{feature_str}_graph_{timestamp}.json" if not manifest.get("aggregate") else f"aggregate_{feature_str}_{timestamp}.json"
     
-    # Create output path and ensure directory exists
-    output_path = Path(app_path) / "particle-graph" / filename
-    output_path.parent.mkdir(exist_ok=True)
+    # Create output path using PathResolver
+    output_path = PathResolver.export_path(filename)
     
     # Write the manifest to file
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(manifest, f, indent=2)
+    error = PathResolver.write_json_file(output_path, manifest)
+    if error:
+        logger.error(f"Failed to write export file: {error}")
+        return {"error": error, "isError": True}
     
     # Log and prepare response
     if is_codebase:
@@ -71,14 +74,3 @@ def exportGraph(path: str) -> dict:
             "content": [{"type": "text", "text": f"Saved {output_path}"}], 
             "isError": False
         }
-
-def filter_empty_arrays(obj):
-    """
-    Recursively filter empty arrays and None values from nested dictionaries and lists.
-    Used to reduce size of exported graph files.
-    """
-    if isinstance(obj, dict):
-        return {k: filter_empty_arrays(v) for k, v in obj.items() if v is not None and v != []}
-    elif isinstance(obj, list):
-        return [filter_empty_arrays(item) for item in obj if item is not None and item != []]
-    return obj
