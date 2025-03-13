@@ -1,10 +1,18 @@
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, Union
 
 class PathResolver:
-    PROJECT_ROOT = Path("/project")
+    # Detect if running in Docker or locally
+    if os.path.exists("/project"):
+        # Docker environment
+        PROJECT_ROOT = Path("/project")
+    else:
+        # Local environment - use the current working directory
+        PROJECT_ROOT = Path(os.getcwd())
+    
     CACHE_DIR = PROJECT_ROOT / "particle_cache"
     EXPORT_DIR = PROJECT_ROOT / "particle-graph"
     PARTICLE_EXTENSION = ".particle.json"
@@ -59,37 +67,3 @@ class PathResolver:
     def get_graph_path(cls, feature_name: str) -> Path:
         """Get the path to the graph file for a given feature."""
         return cls.cache_path(f"{feature_name}_graph.json")
-        
-    @classmethod
-    def read_json_file(cls, file_path: Union[str, Path]) -> Tuple[Dict[str, Any], Optional[str]]:
-        """Read and parse a JSON file, returning the data and any error."""
-        try:
-            path_obj = Path(file_path)
-            if not path_obj.exists():
-                return {}, f"File does not exist: {file_path}"
-                
-            with open(path_obj, 'r') as f:
-                return json.load(f), None
-        except json.JSONDecodeError as e:
-            return {}, f"Invalid JSON in {file_path}: {str(e)}"
-        except Exception as e:
-            return {}, f"Error reading {file_path}: {str(e)}"
-            
-    @classmethod
-    def write_json_file(cls, file_path: Union[str, Path], data: Dict[str, Any]) -> Optional[str]:
-        """Write data to a JSON file, returning any error."""
-        try:
-            path_obj = Path(file_path)
-            # Ensure parent directory exists
-            cls.ensure_dir(path_obj.parent)
-            
-            # Write to a temporary file first for atomicity
-            temp_path = str(path_obj) + ".tmp"
-            with open(temp_path, 'w') as f:
-                json.dump(data, f, indent=2)
-                
-            # Rename to target file (atomic on most filesystems)
-            os.replace(temp_path, path_obj)
-            return None
-        except Exception as e:
-            return f"Error writing to {file_path}: {str(e)}"

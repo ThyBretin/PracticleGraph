@@ -1,6 +1,7 @@
 from datetime import datetime
-from src.core.particle_utils import logger, particle_cache
+from src.core.particle_utils import logger
 from src.core.path_resolver import PathResolver
+from src.core.cache_manager import cache_manager
 
 def loadGraph(path: str) -> dict:
     """
@@ -19,9 +20,9 @@ def loadGraph(path: str) -> dict:
     # Handle special codebase parameter
     if path.lower() in ("codebase", "all"):
         # Load the codebase-wide Particle Graph
-        if "__codebase__" in particle_cache:
+        codebase_graph, found = cache_manager.get("__codebase__")
+        if found:
             logger.info("Loading codebase-wide Particle Graph")
-            codebase_graph = particle_cache["__codebase__"]
             
             # Ensure stats are correct
             routes = codebase_graph.get("routes", {})
@@ -42,6 +43,9 @@ def loadGraph(path: str) -> dict:
                 codebase_graph["coverage_percentage"] = round((file_count / js_files_total * 100) if js_files_total > 0 else 0, 2)
             
             logger.info(f"Loaded codebase graph with {codebase_graph.get('file_count', 0)} files ({codebase_graph.get('coverage_percentage', 0)}% coverage)")
+            
+            # Update cached version if we made changes
+            cache_manager.set("__codebase__", codebase_graph)
             return codebase_graph
         else:
             error_msg = "Codebase Particle Graph not found. Run createGraph('all') first."
@@ -55,15 +59,16 @@ def loadGraph(path: str) -> dict:
     # Single feature: return directly from cache
     if len(feature_list) == 1:
         feature = feature_list[0]
-        if feature not in particle_cache:
+        graph, found = cache_manager.get(feature)
+        if not found:
             error_msg = f"Particle Graph '{feature}' not found in cache"
             logger.error(error_msg)
             return {"error": error_msg}
         logger.info(f"Loaded single Particle Graph: {feature}")
-        return particle_cache[feature]
+        return graph
 
     # Multiple features: aggregate
-    missing = [f for f in feature_list if f not in particle_cache]
+    missing = [f for f in feature_list if not cache_manager.has_key(f)]
     if missing:
         error_msg = f"Particles Graphs not found in cache: {missing}"
         logger.error(error_msg)
@@ -72,7 +77,8 @@ def loadGraph(path: str) -> dict:
     # Aggregate tech_stack (deduplicate)
     aggregated_tech = {}
     for feature in feature_list:
-        tech = particle_cache[feature]["tech_stack"]
+        graph, _ = cache_manager.get(feature)
+        tech = graph["tech_stack"]
         for category, value in tech.items():
             if isinstance(value, dict):
                 if category not in aggregated_tech:
@@ -87,7 +93,7 @@ def loadGraph(path: str) -> dict:
     js_files_total = 0
     
     for feature in feature_list:
-        feature_graph = particle_cache[feature]
+        feature_graph, _ = cache_manager.get(feature)
         aggregated_files[feature] = feature_graph["files"]
         
         # Aggregate stats if available

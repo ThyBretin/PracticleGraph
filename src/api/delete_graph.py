@@ -1,4 +1,5 @@
-from src.core.particle_utils import particle_cache, logger
+from src.core.particle_utils import logger
+from src.core.cache_manager import cache_manager
 
 def deleteGraph(path: str) -> dict:
     """ 
@@ -19,14 +20,23 @@ def deleteGraph(path: str) -> dict:
     else:
         feature = path.lower()
     
-    if feature in particle_cache:
-        del particle_cache[feature]
-        success_msg = f"Deleted Particle Graph for: {path}"
-        logger.info(success_msg)
-        return {
-            "content": [{"type": "text", "text": success_msg}],
-            "isError": False
-        }
+    if cache_manager.has_key(feature):
+        deleted = cache_manager.delete(feature)
+        if deleted:
+            success_msg = f"Deleted Particle Graph for: {path}"
+            logger.info(success_msg)
+            return {
+                "content": [{"type": "text", "text": success_msg}],
+                "isError": False
+            }
+        else:
+            error_msg = f"Failed to delete Particle Graph for: {path}"
+            logger.error(error_msg)
+            return {
+                "content": [{"type": "text", "text": error_msg}],
+                "isError": True,
+                "error": error_msg
+            }
     else:
         error_msg = f"No Particle Graph found for: {path}"
         logger.error(error_msg)

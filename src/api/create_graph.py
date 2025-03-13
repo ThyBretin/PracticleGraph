@@ -11,6 +11,7 @@ from src.core.particle_utils import logger, particle_cache
 from src.core.utils import filter_empty
 from src.core.file_handler import read_particle
 from src.core.path_resolver import PathResolver
+from src.core.cache_manager import cache_manager
 
 def createGraph(path: str) -> Dict:
     """
@@ -113,9 +114,9 @@ def createGraph(path: str) -> Dict:
         
     # Update the in-memory cache too
     if is_full_codebase:
-        particle_cache["__codebase__"] = manifest
+        cache_manager.set("__codebase__", manifest)
     else:
-        particle_cache[feature_name] = manifest
+        cache_manager.set(feature_name, manifest)
         
     logger.info(f"Graph created for {feature_name}: {len(processed_files)} files, {manifest['coverage_percentage']}% coverage")
     return manifest

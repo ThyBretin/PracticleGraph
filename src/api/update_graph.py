@@ -1,4 +1,5 @@
-from src.core.particle_utils import particle_cache, logger
+from src.core.particle_utils import logger
+from src.core.cache_manager import cache_manager
 from src.api.create_graph import createGraph
 
 def updateGraph(path: str) -> dict:
@@ -29,7 +30,7 @@ def updateGraph(path: str) -> dict:
     
     # Update cache if successful
     if "error" not in manifest:
-        particle_cache[cache_key] = manifest
+        cache_manager.set(cache_key, manifest, persist=True)
         logger.info(f"Updated Particle Graph for: {path}")
     else:
         logger.error(f"Failed to update Particle Graph for: {path}")
