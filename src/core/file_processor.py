@@ -18,8 +18,40 @@ def process_directory(root_dir: str, rich: bool = True) -> dict:
     """
     logger.info(f"Processing directory: {root_dir}")
     
-    gitignore = load_gitignore(root_dir)
     root_path = Path(root_dir)
+    
+    # If the given path is a file, not a directory, process just that file
+    if root_path.is_file():
+        logger.info(f"Processing single file: {root_path}")
+        try:
+            result = generate_particle(str(root_path), rich)
+            if result.get("isError", True):
+                return {
+                    "summary": f"Error processing file: {result.get('error', 'Unknown error')}",
+                    "status": "ERROR",
+                    "modified_count": 0,
+                    "errors": [f"{root_path}: {result.get('error', 'Unknown error')}"],
+                    "js_files_found": 1
+                }
+            else:
+                return {
+                    "summary": f"Successfully processed file {root_path.name}",
+                    "status": "OK", 
+                    "modified_count": 1,
+                    "errors": [],
+                    "js_files_found": 1
+                }
+        except Exception as e:
+            return {
+                "summary": f"Error processing file: {str(e)}",
+                "status": "ERROR",
+                "modified_count": 0,
+                "errors": [f"{root_path}: {str(e)}"],
+                "js_files_found": 1
+            }
+    
+    # Process as a directory
+    gitignore = load_gitignore(root_dir)
     modified_count = 0
     errors = []
     js_files_found = 0

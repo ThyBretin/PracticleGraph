@@ -45,9 +45,14 @@ def addParticle(path: str = None, recursive: bool = False, rich: bool = True) ->
                 "errors": [str(e)]
             }
     
-    # Process based on recursive flag
-    if recursive:
-        # Directory processing (recursive)
+    path_obj = Path(normalized_path)
+    
+    # If not recursive and path is a file, use generate_particle directly
+    if not recursive and path_obj.is_file():
+        logger.info(f"Processing single file directly: {path_obj}")
+        return generate_particle(normalized_path, rich)
+    else:
+        # Directory processing (recursive) or path is a directory
         result = process_directory(normalized_path, rich)
         return {
             "content": [{"type": "text", "text": result["summary"]}],
@@ -56,6 +61,3 @@ def addParticle(path: str = None, recursive: bool = False, rich: bool = True) ->
             "modified_count": result["modified_count"],
             "errors": result["errors"]
         }
-    else:
-        # Single file processing
-        return generate_particle(normalized_path, rich)
