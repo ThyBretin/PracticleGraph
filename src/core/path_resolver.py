@@ -67,3 +67,50 @@ class PathResolver:
     def get_graph_path(cls, feature_name: str) -> Path:
         """Get the path to the graph file for a given feature."""
         return cls.cache_path(f"{feature_name}_graph.json")
+        
+    @classmethod
+    def read_json_file(cls, file_path: Union[str, Path]) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """
+        Read and parse a JSON file safely.
+        
+        Args:
+            file_path: Path to the JSON file to read
+            
+        Returns:
+            Tuple of (data, error): data is the parsed JSON if successful, error is an error message if failed
+        """
+        try:
+            path_obj = Path(file_path)
+            if not path_obj.exists():
+                return None, f"File not found: {file_path}"
+                
+            with open(path_obj, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data, None
+        except json.JSONDecodeError as e:
+            return None, f"JSON decode error: {str(e)}"
+        except Exception as e:
+            return None, f"Error reading file: {str(e)}"
+            
+    @classmethod
+    def write_json_file(cls, file_path: Union[str, Path], data: Dict[str, Any]) -> Optional[str]:
+        """
+        Write data to a JSON file safely.
+        
+        Args:
+            file_path: Path to the JSON file to write
+            data: Dictionary of data to write to the file
+            
+        Returns:
+            None if successful, error message if failed
+        """
+        try:
+            path_obj = Path(file_path)
+            # Create parent directories if they don't exist
+            path_obj.parent.mkdir(parents=True, exist_ok=True)
+                
+            with open(path_obj, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            return None
+        except Exception as e:
+            return f"Error writing file: {str(e)}"

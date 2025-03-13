@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Tuple, Dict, Any, Optional, Union
 
-from src.core.particle_utils import logger
+from src.particle.particle_support import logger
 from src.core.path_resolver import PathResolver
 
 def read_file(file_path: str) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:

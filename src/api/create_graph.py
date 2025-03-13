@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Dict, List
 
 from src.api.add_particle import addParticle
-from src.api.aggregate_app_story import aggregate_app_story
-from src.analysis.tech_stack import get_tech_stack
-from src.core.particle_utils import logger, particle_cache
+from src.graph.aggregate_app_story import aggregate_app_story
+from src.graph.tech_stack import get_tech_stack
+from src.particle.particle_support import logger, particle_cache
 from src.core.utils import filter_empty
-from src.core.file_handler import read_particle
+from src.particle.file_handler import read_particle
 from src.core.path_resolver import PathResolver
 from src.core.cache_manager import cache_manager
 

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from src.core.particle_utils import app_path, logger, load_gitignore_patterns
+from src.particle.particle_support import app_path, logger, load_gitignore_patterns
 import fnmatch
 
 def check_root() -> dict:

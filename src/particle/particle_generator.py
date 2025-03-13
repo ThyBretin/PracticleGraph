@@ -3,8 +3,8 @@ import json
 import os
 from pathlib import Path
 
-from src.core.file_handler import read_file, write_particle
-from src.core.particle_utils import logger
+from src.particle.file_handler import read_file, write_particle
+from src.particle.particle_support import logger
 
 PROJECT_ROOT = "/project"
 
@@ -45,7 +45,7 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
 
     try:
         node_path = str(absolute_path)
-        cmd = ['node', '/app/js/babel_parser.js', node_path]
+        cmd = ['node', '/app/src/particle/js/babel_parser.js', node_path]
         env = os.environ.copy()
         if rich:
             env['RICH_PARSING'] = '1'

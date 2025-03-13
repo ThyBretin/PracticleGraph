@@ -1,6 +1,6 @@
 import fastmcp
 import logging
-from src.core.particle_utils import logger
+from src.particle.particle_support import logger
 from src.api.add_particle import addParticle
 from src.api.create_graph import createGraph
 from src.api.load_graph import loadGraph

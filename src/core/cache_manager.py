@@ -5,7 +5,7 @@ import threading
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List, Set, Union
 
-from src.core.particle_utils import logger
+from src.particle.particle_support import logger
 from src.core.path_resolver import PathResolver
 
 class CacheManager:

@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from src.core.particle_utils import app_path, logger
+from src.particle.particle_support import app_path, logger
 
 # Configurable tech categories (unchanged)
 TECH_CATEGORIES = {

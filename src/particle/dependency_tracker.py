@@ -1,4 +1,4 @@
-from src.core.particle_utils import logger
+from src.particle.particle_support import logger
 
 def extract_dependencies(hooks, content, rich=True):
     """Extract dependencies based on hooks and content."""

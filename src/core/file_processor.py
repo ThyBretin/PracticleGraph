@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
 
-from src.core.particle_generator import generate_particle
-from src.core.particle_utils import logger
+from src.particle.particle_generator import generate_particle
+from src.particle.particle_support import logger
 from src.core.utils import load_gitignore
 
 def process_directory(root_dir: str, rich: bool = True) -> dict:

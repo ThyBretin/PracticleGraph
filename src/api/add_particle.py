@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 
-from src.core.file_handler import read_file, write_particle
-from src.core.file_utils import process_directory
-from src.core.particle_generator import generate_particle
-from src.core.particle_utils import logger
+from src.particle.file_handler import read_file, write_particle
+from src.core.file_processor import process_directory
+from src.particle.particle_generator import generate_particle
+from src.particle.particle_support import logger
 from src.core.path_resolver import PathResolver
 
 def addParticle(path: str = None, recursive: bool = False, rich: bool = True) -> dict:

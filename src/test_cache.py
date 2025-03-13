@@ -11,7 +11,7 @@ from pathlib import Path
 # Add the parent directory to the path to make imports work locally
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.core.particle_utils import logger, particle_cache
+from src.particle.particle_support import logger, particle_cache
 from src.core.cache_manager import cache_manager
 from src.core.path_resolver import PathResolver
 
