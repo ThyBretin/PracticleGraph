@@ -47,8 +47,9 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
         node_path = str(absolute_path)
         cmd = ['node', '/app/src/particle/js/babel_parser.js', node_path]
         env = os.environ.copy()
-        if rich:
-            env['RICH_PARSING'] = '1'
+        # We now always run in rich mode since parser has been enhanced
+        # Just keep the rich param for backward compatibility
+        env['RICH_PARSING'] = '1'
         result = subprocess.run(cmd, capture_output=True, text=True, check=True, env=env)
         if not result.stdout.strip():
             logger.error(f"Empty output from Babel for {relative_path}")
@@ -60,12 +61,35 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
         if error:
             return {"error": f"Write failed: {error}"}
 
-        summary = (f"Found {len(filtered_context.get('props', []))} props, "
-                  f"{len(filtered_context.get('hooks', []))} hooks, "
-                  f"{len(filtered_context.get('calls', []))} calls")
-        if rich:
-            summary += (f", {len(filtered_context.get('logic', []))} logic, "
-                       f"{len(filtered_context.get('depends_on', []))} deps")
+        # Generate a more comprehensive summary with the enhanced fields
+        summary_fields = []
+        
+        # Count simple items
+        for field_name, display_name in [
+            ('props', 'props'),
+            ('hooks', 'hooks'),
+            ('calls', 'calls'),
+            ('logic', 'logic conditions'),
+            ('depends_on', 'dependencies'),
+            ('jsx', 'JSX elements'),
+            ('routes', 'routes'),
+            ('comments', 'comments')
+        ]:
+            if field_name in filtered_context:
+                count = len(filtered_context[field_name])
+                if count > 0:
+                    summary_fields.append(f"{count} {display_name}")
+        
+        # Add state machine if exists
+        if 'state_machine' in filtered_context:
+            states_count = len(filtered_context['state_machine'].get('states', []))
+            if states_count > 0:
+                summary_fields.append(f"state machine with {states_count} states")
+        
+        summary = ", ".join(summary_fields)
+        if not summary:
+            summary = "No significant elements found"
+            
         logger.info(f"Generated summary: {summary}")
 
         return {
