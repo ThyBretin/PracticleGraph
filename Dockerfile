@@ -21,7 +21,7 @@ COPY src/particle/particle_support.py src/particle/file_handler.py src/particle/
 COPY src/particle/js/babel_parser.js src/particle/js/
 
 # Copy graph files
-COPY src/graph/tech_stack.py src/graph/aggregate_app_story.py src/graph/
+COPY src/graph/tech_stack.py src/graph/aggregate_app_story.py src/graph/graph_support.py src/graph/
 
 # Copy helpers
 COPY src/helpers/project_detector.py src/helpers/dir_scanner.py src/helpers/config_loader.py src/helpers/gitignore_parser.py src/helpers/data_cleaner.py src/helpers/
