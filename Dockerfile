@@ -12,7 +12,7 @@ COPY server.py ./
 COPY src/api/add_particle.py src/api/create_graph.py src/api/load_graph.py src/api/list_graph.py src/api/update_graph.py src/api/export_graph.py src/api/delete_graph.py src/api/
 
 # Copy core files
-COPY src/core/utils.py src/core/path_resolver.py src/core/cache_manager.py src/core/file_processor.py src/core/
+COPY src/core/path_resolver.py src/core/cache_manager.py src/core/file_processor.py src/core/
 
 # Copy particle files
 COPY src/particle/particle_support.py src/particle/file_handler.py src/particle/dependency_tracker.py src/particle/particle_generator.py src/particle/
@@ -24,7 +24,7 @@ COPY src/particle/js/babel_parser.js src/particle/js/
 COPY src/graph/tech_stack.py src/graph/aggregate_app_story.py src/graph/
 
 # Copy helpers
-COPY src/helpers/project_detector.py src/helpers/dir_scanner.py src/helpers/config_loader.py src/helpers/gitignore_parser.py src/helpers/
+COPY src/helpers/project_detector.py src/helpers/dir_scanner.py src/helpers/config_loader.py src/helpers/gitignore_parser.py src/helpers/data_cleaner.py src/helpers/
 
 # Add app directory to Python path
 ENV PYTHONPATH=/app

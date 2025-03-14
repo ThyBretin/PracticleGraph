@@ -4,7 +4,7 @@ from pathlib import Path
 
 from src.particle.particle_support import logger
 from src.api.load_graph import loadGraph
-from src.core.utils import filter_empty
+from src.helpers.data_cleaner import filter_empty
 from src.core.path_resolver import PathResolver
 
 def exportGraph(path: str) -> dict:

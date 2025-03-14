@@ -9,9 +9,12 @@ class PathResolver:
     if os.path.exists("/project"):
         # Docker environment
         PROJECT_ROOT = Path("/project")
+        # Host path that gets mounted to /project (for path translation)
+        HOST_PROJECT_PATH = "/Users/Thy/Today"
     else:
         # Local environment - use the current working directory
         PROJECT_ROOT = Path(os.getcwd())
+        HOST_PROJECT_PATH = None
     
     CACHE_DIR = PROJECT_ROOT / "particle_cache"
     EXPORT_DIR = PROJECT_ROOT / "particle-graph"
@@ -24,9 +27,23 @@ class PathResolver:
         return directory
 
     @classmethod
+    def translate_host_path(cls, path: str) -> str:
+        """Translate a host path to a container path if needed."""
+        if not cls.HOST_PROJECT_PATH:
+            return path
+            
+        # If the path starts with the host project path, replace it with the container project path
+        if path.startswith(cls.HOST_PROJECT_PATH):
+            return path.replace(cls.HOST_PROJECT_PATH, str(cls.PROJECT_ROOT))
+        return path
+
+    @classmethod
     def resolve_path(cls, path: str, base: Path = PROJECT_ROOT) -> Path:
         """Resolve a path relative to a base, returning a normalized Path object."""
         try:
+            # First, translate any host paths to container paths
+            path = cls.translate_host_path(path)
+            
             if Path(path).is_absolute():
                 return Path(path).resolve()
             return (base / path).resolve()

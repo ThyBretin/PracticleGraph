@@ -1,8 +1,6 @@
-import os
-from pathlib import Path
-import pathspec
-
-PROJECT_ROOT = "/project"
+"""
+Helper module for data cleaning functions
+"""
 
 def filter_empty(obj):
     """

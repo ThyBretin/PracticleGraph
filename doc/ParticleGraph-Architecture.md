@@ -21,8 +21,8 @@ Particle-Graph is a system designed to analyze and generate graph representation
 │   ├── core/                    # Core functionality and utilities
 │   │   ├── cache_manager.py     # Centralized cache management system
 │   │   ├── file_processor.py    # Process files and directories
-│   │   ├── path_resolver.py     # Path resolution and management
-│   │   └── utils.py             # General utility functions
+│   │   └──path_resolver.py     # Handle path resolution, normalization, directory management, and translation between host and container paths
+│   │   
 │   │
 │   ├── graph/                   # Graph generation and analysis
 │   │   ├── aggregate_app_story.py # Aggregate related app components
@@ -30,6 +30,7 @@ Particle-Graph is a system designed to analyze and generate graph representation
 │   │
 │   ├── helpers/                 # Helper utilities
 │   │   ├── config_loader.py     # Load configuration
+│   │   ├── data_cleaner.py      # Data cleaning and filtering utilities
 │   │   ├── dir_scanner.py       # Directory scanning utilities
 │   │   ├── gitignore_parser.py  # Parse gitignore files
 │   │   └── project_detector.py  # Detect project roots
@@ -72,8 +73,8 @@ The core layer handles the fundamental operations and data transformations.
 |------|----------------|
 | `cache_manager.py` | Centralized cache management with in-memory/disk storage, thread safety, and automatic persistence |
 | `file_processor.py` | Process directories and files, including filtering by extension and handling gitignore rules |
-| `path_resolver.py` | Handle path resolution, normalization, and directory management |
-| `utils.py` | General utility functions used across the codebase, including path normalization, gitignore loading, and data filtering |
+| `path_resolver.py` | Handle path resolution, normalization, directory management, and translation between host and container paths |
+| `utils.py` | General utility functions used across the codebase |
 
 ### Graph Layer (`src/graph/`)
 
@@ -91,6 +92,7 @@ Supporting utilities for the overall system.
 | File | Responsibility |
 |------|----------------|
 | `config_loader.py` | Load and parse configuration settings |
+| `data_cleaner.py` | Clean and filter data structures including removing empty values |
 | `dir_scanner.py` | Scan directories with pattern matching and filtering |
 | `gitignore_parser.py` | Parse gitignore files for pattern matching |
 | `project_detector.py` | Detect and validate project root directories |
@@ -164,6 +166,7 @@ This section provides a list of the main functions defined in each file of the P
 
 #### `path_resolver.py`
 - `ensure_dir(directory: Path)` - Ensure a directory exists
+- `translate_host_path(path: str)` - Translate host machine paths to container paths
 - `resolve_path(path: str, base: Path)` - Resolve a path to an absolute path
 - `relative_to_project(path: Union[str, Path])` - Get a path relative to the project root
 - `cache_path(filename: str)` - Get a path in the cache directory
@@ -172,7 +175,6 @@ This section provides a list of the main functions defined in each file of the P
 - `get_graph_path(feature_name: str)` - Get the path for a graph file
 
 #### `utils.py`
-- `filter_empty(data: Union[Dict, List])` - Remove empty values from data structures
 - `load_gitignore(path: str)` - Load gitignore patterns
 - `normalize_path(path: str)` - Normalize file paths
 
@@ -191,6 +193,9 @@ This section provides a list of the main functions defined in each file of the P
 #### `config_loader.py`
 - `load_config(config_path: str)` - Load configuration from a file
 - `get_config_value(key: str, default: Any)` - Get a configuration value
+
+#### `data_cleaner.py`
+- `filter_empty(obj: Union[Dict, List])` - Recursively remove empty values from data structures
 
 #### `dir_scanner.py`
 - `scan_directory(path: str, pattern: str)` - Scan directory contents with a pattern
@@ -251,4 +256,3 @@ The codebase has undergone several refactoring efforts to improve organization:
    - Each module now has a clearer, more focused responsibility
    - Reduced code duplication across the codebase
    - Improved maintainability and testability
-
