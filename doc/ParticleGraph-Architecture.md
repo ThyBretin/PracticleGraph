@@ -22,7 +22,6 @@ Particle-Graph is a system designed to analyze and generate graph representation
 │   │   ├── cache_manager.py     # Centralized cache management system
 │   │   ├── file_processor.py    # Process files and directories
 │   │   ├── file_utils.py        # File-related utility functions
-│   │   ├── utils.py             # General utility functions
 │   │   └── path_resolver.py     # Handle path resolution, normalization, directory management, and translation between host and container paths
 │   │   
 │   │
@@ -43,9 +42,8 @@ Particle-Graph is a system designed to analyze and generate graph representation
 │       ├── file_handler.py      # Handle file operations
 │       ├── particle_generator.py # Generate particle metadata from code
 │       └── particle_support.py  # Support functions for particles
-│
-├── js/                          # JavaScript utilities
-│   └── babel_parser.js          # Parse JS/JSX files with Babel
+│       └── js/                  # JavaScript utilities
+│           └── babel_parser.js    # Parse JS/JSX files with Babel
 │
 ├── doc/                         # Documentation
 ├── dev/                         # Development utilities
@@ -78,7 +76,6 @@ The core layer handles the fundamental operations and data transformations.
 | `file_processor.py` | Process directories and files, including filtering by extension and handling gitignore rules |
 | `file_utils.py` | Utility functions for file operations and directory traversal |
 | `path_resolver.py` | Handle path resolution, normalization, directory management, and translation between host and container paths |
-| `utils.py` | General utility functions used across the codebase |
 
 ### Graph Layer (`src/graph/`)
 

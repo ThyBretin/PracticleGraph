@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10-slim
 RUN apt-get update && apt-get install -y nodejs npm
 WORKDIR /app
 
@@ -29,6 +29,6 @@ COPY src/helpers/project_detector.py src/helpers/dir_scanner.py src/helpers/conf
 # Add app directory to Python path
 ENV PYTHONPATH=/app
 
-RUN pip install fastmcp lark pathspec
+RUN pip install fastmcp pathspec
 RUN npm install @babel/parser
 CMD ["python", "server.py"]
