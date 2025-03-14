@@ -1,6 +1,7 @@
 Goal Recap
 We want the graph to tell 95% of the app’s story natively—routes, data, props, hooks, and logic weaving together a clear picture of what the app does—all while staying agnostic and avoiding human guesses. The hierarchy you suggested (routes > database > props > hooks/logic) will guide how we prioritize and present the data. We’ll enhance Babel parsing for richer raw data and tweak the graph output to highlight the app’s essence, keeping changes modular and decoupled.
 Observations from the Graph
+
 The current graph is solid but lean:
 Routes: Files like app/(routes)/attendee/profile.jsx and app/(shared)/discovery.jsx hint at the app’s navigation structure. Expo Router hooks (useRouter, useSegments) show up, but route paths aren’t explicit.
 
@@ -133,7 +134,7 @@ _______
 
 Goal: The Best Context File Ever
 We want particle-graph to:
-Tell 95% of the Story: Routes, data, logic, and business intent in one file.
+Tell 95% of the Story: Routes, data, logic, and business intent in one file to 
 
 Be Agnostic: Extract everything from code, no human guesses.
 
@@ -346,4 +347,314 @@ Babel Note: Think we need a big parsing overhaul, or just tweaks?
 Next: Greenlight this plan, tweak it, or drop NavigationBar.jsx to test?
 
 I’m stoked—this feels like the blueprint for the best particle-graph ever. It’s got the depth of eventState.js, the breadth of your app, and a dash of CRCT’s smarts. Over to you—what’s your vibe?
+
+
+-----------------------
+
+24 March 2025
+
+
+Roadmap Progress (March 12, 2025 Goals)
+Let’s see how far we’ve come and what’s left from “The Best Context File Ever” plan.
+1. Enhance Babel Parsing for Maximum Context
+Done:
+babel_parser.js (now in src/particle/js/) extracts props, hooks, calls (see particle_generator.py’s subprocess call).
+
+Rich parsing toggle exists (RICH_PARSING env var in generate_particle()).
+
+Pending:
+Props: Add types/defaults (e.g., { role = "attendee" } → {"name": "role", "default": "attendee"}).
+
+Routes: Extract explicit paths (useRouter().push), JSX nav (<Link to>), infer from filenames.
+
+State Machines: Detect *_STATES objects or implicit states (e.g., if (stage === "new")).
+
+Hooks/Calls: Add context (e.g., useEffect in conditional) and call args (e.g., supabase.from("events")).
+
+Logic: Summarize conditions/loops (e.g., if (maleMeetsMin) → "if male capacity met").
+
+JSX: Count elements, note props (e.g., <Button onPress>).
+
+Comments: Parse for intent (e.g., // Manages event state).
+
+File: Needs a babel_parser_enhancements.js (or extend babel_parser.js).
+
+2. Restructure Graph Output for Storytelling
+Done:
+aggregate_app_story.py and tech_stack.py in src/graph/—graph-level aggregation.
+
+filter_empty() exists (in src/core/utils.py, soon src/helpers/data_cleaner.py).
+
+Pending:
+Top-Level app_story:
+"routes": Aggregate all route data.
+
+"data": List data sources (Supabase, stores).
+
+"patterns": Count role-based/state-driven patterns.
+
+File-Level:
+Enrich Particle output with state, logic, intent.
+
+Add "dependencies": {"uses": [], "used_by": []}.
+
+Reasoning Trace: Optional debug log (e.g., "Parsed 154 files").
+
+Fix: exportGraph.py file count bug (needs createCodebaseParticle.py tweak).
+
+File: Needs graph_utils.py for post-processing.
+
+3. Connect the Dots Across the Codebase
+Done:
+dependency_tracker.py has extract_dependencies() and build_dependency_graph().
+
+Pending:
+State Usage: Cross-ref states (e.g., stage → EVENT_STATES).
+
+Data Flow: Map Supabase calls to consumers.
+
+Route-to-Logic: Link routes to behaviors (e.g., /qrscanner → "Validate tickets").
+
+File: graph_utils.py for post-processing links.
+
+4. Validate with Key Files
+Pending:
+Test NavigationBar.jsx, eventState.js, discovery.jsx.
+
+Check route targets, state lifecycles, data links.
+
+Note: We’d need those files to validate—NavigationBar.jsx is mentioned but not shared yet.
+
+5. Implementation Guidelines
+Done:
+Modular flags (e.g., rich in generate_particle()).
+
+add_particle.py supports --rich (assumed from design).
+
+Pending:
+New babel_parser_enhancements.js.
+
+graph_utils.py for postProcessGraph.
+
+Fix file count in createCodebaseParticle.py (not shared yet—assume it’s in src/api/?).
+
+Test incrementally.
+
+Updated Tasks to Align Architecture & Roadmap
+Here’s the consolidated to-do list, blending architecture fixes with roadmap goals:
+1. Finalize File Moves & Naming
+Fix src/core/utils.py:
+Move filter_empty() to src/helpers/data_cleaner.py.
+
+Move load_gitignore() to src/helpers/gitignore_parser.py (merge with load_gitignore(root_dir, recursive=False)).
+
+Delete normalize_path() (replace with PathResolver calls—audit particle_generator.py, create_graph.py, etc.).
+
+Delete src/core/utils.py once empty.
+
+Confirm:
+src/particle/js/babel_parser.js is moved.
+
+src/core/file_processor.py is set (ex-file_utils.py).
+
+2. Enhance Babel Parsing (src/particle/js/babel_parser.js)
+Add to babel_parser.js (or new babel_parser_enhancements.js):
+Props with types/defaults.
+
+Route extraction (explicit, JSX, filename-based).
+
+State machine detection (*_STATES, implicit states).
+
+Hooks/calls with context/args.
+
+Logic summaries (conditions, loops).
+
+JSX element counts/props.
+
+Comment parsing for intent.
+
+Update particle_generator.py to handle new output.
+
+3. Build src/graph/graph_support.py (New!)
+Rename idea: Not “utils”—maybe graph_support.py?
+
+Functions:
+postProcessGraph(graph): Build app_story (routes, data, patterns).
+
+linkDependencies(graph): Add "uses", "used_by".
+
+traceReasoning(graph, include_trace): Optional debug log.
+
+Update exportGraph.py to call it (optional flag).
+
+4. Connect the Dots
+In dependency_tracker.py:
+Enhance extract_dependencies() for state/data flow.
+
+Update build_dependency_graph() to link routes/logic.
+
+In graph_support.py:
+Add mapStateFlow(), mapDataFlow(), linkRoutesToLogic().
+
+5. Cleanup & Validate
+Path Cleanup: Replace any normalize_path() stragglers with PathResolver.
+
+File Count Fix: Check createCodebaseParticle.py (if it’s create_graph.py?) for file_count: 0 bug.
+
+Test: Validate with NavigationBar.jsx, eventState.js, discovery.jsx (share if you’ve got ‘em!).
+
+Updated Structure (Post-Tasks)
+
+src/
+├── api/
+│   ├── add_particle.py
+│   ├── create_graph.py
+│   └── ... (other APIs)
+├── core/
+│   ├── cache_manager.py
+│   ├── file_processor.py
+│   ├── path_resolver.py
+├── particle/
+│   ├── js/
+│   │   └── babel_parser.js
+│   ├── dependency_tracker.py
+│   ├── file_handler.py
+│   ├── particle_generator.py
+│   ├── particle_support.py
+├── graph/
+│   ├── aggregate_app_story.py
+│   ├── tech_stack.py
+│   ├── graph_support.py  # New
+├── helpers/
+│   ├── config_loader.py
+│   ├── dir_scanner.py
+│   ├── gitignore_parser.py
+│   ├── project_detector.py
+│   ├── data_cleaner.py   # New
+
+
+
+14 march update 
+
+Finalize utils.py Eviction
+Move filter_empty():
+From src/core/utils.py → src/helpers/data_cleaner.py.
+
+Update imports in callers (e.g., src/particle/file_handler.py’s write_particle(), src/api/export_graph.py).
+
+Relocate PROJECT_ROOT:
+Move PROJECT_ROOT = "/project" to src/core/path_resolver.py (it’s path-related, used in particle_generator.py).
+
+Update imports (e.g., from src.core.path_resolver import PROJECT_ROOT in particle_generator.py).
+
+Delete src/core/utils.py:
+Once filter_empty() and PROJECT_ROOT are rehomed, nuke it.
+
+Imports Cleanup:
+src/helpers/data_cleaner.py only needs isinstance()—no os, Path, or pathspec required.
+
+2. Sync with Roadmap & Architecture
+Since utils.py is the last straggler, let’s fold this into the broader plan:
+1. File Moves & Naming (Updated)
+Done (Confirmed):
+file_handler.py, particle_generator.py, particle_support.py, dependency_tracker.py → src/particle/.
+
+babel_parser.js → src/particle/js/.
+
+tech_stack.py, aggregate_app_story.py → src/graph/.
+
+file_utils.py → src/core/file_processor.py.
+
+check_root.py → src/helpers/project_detector.py, list_dir.py → src/helpers/dir_scanner.py.
+
+Pending:
+src/core/utils.py → src/helpers/data_cleaner.py (just filter_empty()).
+
+Move PROJECT_ROOT to src/core/path_resolver.py.
+
+Delete src/core/utils.py.
+
+2. Enhance Babel Parsing
+Extend src/particle/js/babel_parser.js (or new babel_parser_enhancements.js):
+Props with types/defaults, routes, state machines, hooks/calls with context, logic summaries, JSX details, comments.
+
+Update src/particle/particle_generator.py to process new output.
+
+3. Graph Support
+Create src/graph/graph_support.py:
+postProcessGraph(), linkDependencies(), traceReasoning().
+
+Hook into src/api/export_graph.py (e.g., --rich flag).
+
+4. Connect the Dots
+Update src/particle/dependency_tracker.py:
+Enhance extract_dependencies() for state/data/route links.
+
+Add to src/graph/graph_support.py:
+mapStateFlow(), mapDataFlow(), linkRoutesToLogic().
+
+5. Cleanup & Validate
+Path Cleanup: Confirm no normalize_path() remains (looks gone from utils.py—check elsewhere).
+
+File Count Fix: Audit create_graph.py (or createCodebaseParticle.py) for file count bug.
+
+Test: Use NavigationBar.jsx, eventState.js, discovery.jsx (if available).
+
+Updated Structure (Post-utils.py)
+
+src/
+├── api/
+│   ├── add_particle.py
+│   ├── create_graph.py
+│   └── ... (other APIs)
+├── core/
+│   ├── cache_manager.py
+│   ├── file_processor.py
+│   ├── path_resolver.py  # Gets PROJECT_ROOT
+├── particle/
+│   ├── js/
+│   │   └── babel_parser.js
+│   ├── dependency_tracker.py
+│   ├── file_handler.py
+│   ├── particle_generator.py
+│   ├── particle_support.py
+├── graph/
+│   ├── aggregate_app_story.py
+│   ├── tech_stack.py
+│   ├── graph_support.py  # New
+├── helpers/
+│   ├── config_loader.py
+│   ├── dir_scanner.py
+│   ├── gitignore_parser.py
+│   ├── project_detector.py
+│   ├── data_cleaner.py   # New, from utils.py
+
+Claude Instructions (Tightened Up)
+Move filter_empty():
+From src/core/utils.py → src/helpers/data_cleaner.py.
+
+Update imports (e.g., from src.core.utils import filter_empty → from src.helpers.data_cleaner import filter_empty in file_handler.py, export_graph.py).
+
+Move PROJECT_ROOT:
+From src/core/utils.py → src/core/path_resolver.py.
+
+Update imports (e.g., from src.core.utils import PROJECT_ROOT → from src.core.path_resolver import PROJECT_ROOT in particle_generator.py).
+
+Delete utils.py:
+Remove src/core/utils.py once empty.
+
+Enhance Babel Parsing:
+Add to src/particle/js/babel_parser.js: props details, routes, state machines, hooks/calls, logic, JSX, comments.
+
+Adjust src/particle/particle_generator.py.
+
+Add Graph Support:
+Create src/graph/graph_support.py with postProcessGraph(), linkDependencies(), traceReasoning().
+
+Update src/api/export_graph.py to use it.
+
+Test & Fix:
+Check for normalize_path() remnants.
+
+Fix file count in src/api/create_graph.py.
 
