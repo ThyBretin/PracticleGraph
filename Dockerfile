@@ -18,7 +18,7 @@ COPY src/core/path_resolver.py src/core/cache_manager.py src/core/file_processor
 COPY src/particle/particle_support.py src/particle/file_handler.py src/particle/dependency_tracker.py src/particle/particle_generator.py src/particle/
 
 # Copy particle JS files
-COPY src/particle/js/babel_parser.js src/particle/js/
+COPY src/particle/js/babel_parser_core.js src/particle/js/metadata_extractor.js src/particle/js/
 
 # Copy graph files
 COPY src/graph/tech_stack.py src/graph/aggregate_app_story.py src/graph/graph_support.py src/graph/

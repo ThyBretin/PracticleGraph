@@ -2,6 +2,14 @@
 
 ## Project Overview
 
+### Core Purpose
+- Extract 95% of the application's narrative directly from the codebase
+Provide maximum context and relevancy for developers
+Optimize token usage efficiency
+Maintain up-to-date graph representation of code relationships
+
+### Core Features
+
 Particle-Graph is a system designed to analyze and generate graph representations of code components, particularly focusing on JavaScript/JSX codebases. The system extracts metadata ("particles") from source files, builds relationship graphs between components, and provides APIs for creating, updating, loading, and exporting these graphs that can be used for code analysis, onboarding and AI assistance.
 
 ## Directory Structure
@@ -21,7 +29,6 @@ Particle-Graph is a system designed to analyze and generate graph representation
 │   ├── core/                    # Core functionality and utilities
 │   │   ├── cache_manager.py     # Centralized cache management system
 │   │   ├── file_processor.py    # Process files and directories
-│   │   ├── file_utils.py        # File-related utility functions
 │   │   └── path_resolver.py     # Handle path resolution, normalization, directory management, and translation between host and container paths
 │   │   
 │   │
@@ -42,8 +49,9 @@ Particle-Graph is a system designed to analyze and generate graph representation
 │       ├── file_handler.py      # Handle file operations
 │       ├── particle_generator.py # Generate particle metadata from code
 │       └── particle_support.py  # Support functions for particles
-│       └── js/                  # JavaScript utilities
-│           └── babel_parser.js    # Parse JS/JSX files with Babel
+│       └── js/                  # JavaScript utilities    
+│         ├── babel_parser_core.js  # Parse JS/JSX files with Babel
+│         └── metadata_extractor.js # Extract metadata from parsed code
 │
 ├── doc/                         # Documentation
 ├── dev/                         # Development utilities
@@ -74,7 +82,6 @@ The core layer handles the fundamental operations and data transformations.
 |------|----------------|
 | `cache_manager.py` | Centralized cache management with in-memory/disk storage, thread safety, and automatic persistence |
 | `file_processor.py` | Process directories and files, including filtering by extension and handling gitignore rules |
-| `file_utils.py` | Utility functions for file operations and directory traversal |
 | `path_resolver.py` | Handle path resolution, normalization, directory management, and translation between host and container paths |
 
 ### Graph Layer (`src/graph/`)
@@ -176,11 +183,6 @@ This section provides a list of the main functions defined in each file of the P
 - `get_particle_path(file_path: Union[str, Path])` - Get the path for a particle file
 - `get_graph_path(feature_name: str)` - Get the path for a graph file
 
-#### `utils.py`
-- `load_gitignore(path: str)` - Load gitignore patterns
-- `normalize_path(path: str)` - Normalize file paths
-- `filter_empty(obj: Union[Dict, List])` - Recursively remove empty values from data structures
-
 ### Graph Layer (`src/graph/`)
 
 #### `aggregate_app_story.py`
@@ -251,14 +253,14 @@ This section provides a list of the main functions defined in each file of the P
 ┌───────────────────┐     ┌────────────────────┐     ┌────────────────┐
 │                   │     │                    │     │                │
 │  addParticle()    │─────▶ process_directory() ────▶ file_processor  │
-│  (add_particle.py)│     │   (file_utils.py)  │     │                │
+│  (add_particle.py)│     │                    │     │                │
 └───────┬───────────┘     └────────────────────┘     └────────┬───────┘
         │                                                     │
         │                                                     ▼
 ┌───────▼───────────┐     ┌────────────────────┐     ┌────────────────┐
 │                   │     │                    │     │                │
 │  normalize_path() │◀────┤  load_gitignore()  │◀────┤ filter by ext  │
-│    (utils.py)     │     │    (utils.py)      │     │                │
+│                   │     │                    │     │                │
 └───────┬───────────┘     └────────────────────┘     └────────┬───────┘
         │                                                     │
         ▼                                                     ▼
