@@ -39,15 +39,39 @@ def postProcessGraph(graph: Union[Dict[str, Any], List, Any]) -> Union[Dict[str,
     processed_graph["metadata"]["post_processed"] = True
     
     # Calculate additional statistics if files are present
+    file_count = 0
+    node_count = 0
+    
+    # Different file structure handling based on codebase data
     if "files" in processed_graph:
-        file_count = len(processed_graph.get("files", {}))
-        processed_graph["metadata"]["file_count"] = file_count
+        # Handle different possible file structures
+        files_data = processed_graph.get("files", {})
         
-        # Count total nodes
-        node_count = 0
-        for file_data in processed_graph.get("files", {}).values():
-            if isinstance(file_data, dict) and "particles" in file_data:
-                node_count += len(file_data.get("particles", []))
+        # Count structure 1: Dictionary of file paths to file data
+        if isinstance(files_data, dict) and all(isinstance(k, str) for k in files_data.keys()):
+            file_count = len(files_data)
+            # Count nodes in this structure
+            for file_path, file_data in files_data.items():
+                if isinstance(file_data, dict) and "particles" in file_data:
+                    node_count += len(file_data.get("particles", []))
+        
+        # Count structure 2: Dictionary with 'primary', 'shared', etc. keys
+        elif isinstance(files_data, dict) and any(k in ["primary", "shared"] for k in files_data.keys()):
+            primary_files = files_data.get("primary", [])
+            shared_files = files_data.get("shared", [])
+            file_count = len(primary_files) + len(shared_files)
+            
+            # Count nodes in this structure
+            for file_data in primary_files + shared_files:
+                if isinstance(file_data, dict) and "particles" in file_data:
+                    node_count += len(file_data.get("particles", []))
+        
+        # Count structure 3: File count from metadata or other fields
+        if file_count == 0 and "file_count" in processed_graph:
+            file_count = processed_graph["file_count"]
+        
+        # Update the metadata
+        processed_graph["metadata"]["file_count"] = file_count
         processed_graph["metadata"]["node_count"] = node_count
         
         # Apply dependency linking

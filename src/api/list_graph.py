@@ -16,11 +16,20 @@ def listGraph() -> dict:
     
     if not keys:
         logger.info("No Particle Graph cached yet")
-        return {"message": "No Particle Graph available"}
+        return {
+            "content": [{"type": "text", "text": "No Particle Graph available"}],
+            "isError": False
+        }
         
     result = {}
     for key in keys:
         try:
+            # Skip internal keys and tech_stack
+            if key.startswith("__") and key != "__codebase__":
+                continue
+            if key == "tech_stack":
+                continue
+                
             graph, found = cache_manager.get(key)
             
             if found and isinstance(graph, dict):
@@ -44,7 +53,20 @@ def listGraph() -> dict:
     
     if not result:
         logger.warning("No valid graphs found in cache")
-        return {"message": "No valid Particle Graphs available"}
+        return {
+            "content": [{"type": "text", "text": "No valid Particle Graphs available"}],
+            "isError": False
+        }
         
+    # Format the result for MCP client
+    formatted_list = []
+    for graph_name, timestamp in sorted(result.items()):
+        formatted_list.append(f"• {graph_name}: {timestamp}")
+    
+    formatted_text = "Available Particle Graphs:\n\n" + "\n".join(formatted_list)
+    
     logger.info(f"Successfully listed {len(result)} graphs")
-    return result
+    return {
+        "content": [{"type": "text", "text": formatted_text}],
+        "isError": False
+    }

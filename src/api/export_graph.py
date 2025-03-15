@@ -28,19 +28,25 @@ def exportGraph(path: str) -> dict:
     # Normalize path to lowercase feature name
     feature_name = path.split("/")[-1].lower() if "," not in path else "_".join(p.lower() for p in path.split(","))
     manifest = loadGraph(feature_name)
-    if isinstance(manifest, dict) and "error" in manifest:
+    
+    # Ensure manifest is a dictionary to prevent 'str' object has no attribute 'keys' error
+    if not isinstance(manifest, dict):
+        error_msg = f"Invalid graph format for {feature_name}: Expected dict, got {type(manifest)}"
+        logger.error(error_msg)
+        return {"error": error_msg, "isError": True}
+        
+    if "error" in manifest:
         logger.error(f"Failed to load graph for {feature_name}: {manifest['error']}")
-        return {"error": manifest["error"]}
+        return {"error": manifest["error"], "isError": True}
     
     # Extract entities
     is_codebase = path.lower() in ("codebase", "all")
     entities = []
-    if isinstance(manifest, dict):
-        if is_codebase or not manifest.get("aggregate"):
-            entities = [{"path": f["path"], "type": f.get("type", "file")} for f in manifest.get("files", {}).get("primary", []) + manifest.get("files", {}).get("shared", [])]
-        else:
-            for feature_files in manifest.get("files", {}).values():
-                entities.extend([{"path": k, "type": v.get("type", "file")} for k, v in feature_files.items()])
+    if is_codebase or not manifest.get("aggregate"):
+        entities = [{"path": f["path"], "type": f.get("type", "file")} for f in manifest.get("files", {}).get("primary", []) + manifest.get("files", {}).get("shared", [])]
+    else:
+        for feature_files in manifest.get("files", {}).values():
+            entities.extend([{"path": k, "type": v.get("type", "file")} for k, v in feature_files.items()])
     
     # Ensure tech_stack is present (use global cache if available)
     if "tech_stack" not in manifest or not manifest["tech_stack"]:
@@ -57,9 +63,11 @@ def exportGraph(path: str) -> dict:
                 cache_manager.set("tech_stack", manifest["tech_stack"])
             except Exception as e:
                 logger.warning(f"Tech stack generation failed: {str(e)}")
+                # Initialize with empty dict instead of None to avoid key errors later
+                manifest["tech_stack"] = {}
     
     # Apply post-processing if applicable
-    if isinstance(manifest, dict) and "files" in manifest and not manifest.get("aggregate"):
+    if "files" in manifest and not manifest.get("aggregate"):
         try:
             manifest = postProcessGraph(manifest)
         except Exception as e:
@@ -135,7 +143,7 @@ def exportGraph(path: str) -> dict:
         if dependency_count > 0:
             summary += f"{dependency_count} dependencies traced between components\n"
         if "tech_stack" in manifest and manifest["tech_stack"]:
-            tech_list = [f"{k}: {', '.join(v.keys())}" for k, v in manifest["tech_stack"].items()]
+            tech_list = [f"{k}: {', '.join(v.keys())}" for k, v in manifest["tech_stack"].items() if isinstance(v, dict)]
             summary += f"Tech stack: {', '.join(tech_list)}\n"
         summary += (
             f"Complete structure of all components with metadata\n"

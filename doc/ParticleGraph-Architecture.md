@@ -42,6 +42,130 @@ Focus: Aggregated graph—features or codebase.
 
 Aggregation type: Big picture, relational data structure.
 
+## Docker Implementation
+
+Particle-Graph is designed to run both locally and in a Docker container, providing flexibility and consistent behavior across different environments. Docker containerization provides isolation, dependency management, and portability.
+
+### Docker Container Structure
+
+┌─────────────────────────────────────────────────────────────────┐
+│                     Docker Container                            │
+│                                                                 │
+│  ┌─────────────────┐         ┌───────────────────────────────┐  │
+│  │                 │         │                               │  │
+│  │  Particle-Graph │         │ Project Files (Mounted Volume)│  │
+│  │     Services    │◀────────│    /project/thy/today/        │  │
+│  │                 │         │                               │  │
+│  └─────────────────┘         └───────────────────────────────┘  │
+│           │                                                      │
+│           ▼                                                      │
+│  ┌─────────────────┐                                             │
+│  │                 │                                             │
+│  │  Cache Storage  │                                             │
+│  │                 │                                             │
+│  └─────────────────┘                                             │
+│                                                                  │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               │ JSON-RPC API
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│                       MCP Client/Host                           │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+### Path Resolution System
+
+The PathResolver component is a critical part of the system that handles the complex path translations between the host machine and the Docker container. It ensures that file operations work seamlessly regardless of where the code is running.
+
+#### Key PathResolver Responsibilities
+
+1. **Environment Detection**:
+   - Automatically detects whether the code is running in Docker or locally
+   - Sets appropriate base paths and prefixes based on the detected environment
+
+2. **Path Translation**:
+   - Translates paths between host format (e.g., `/Users/Thy/project/`) and Docker format (e.g., `/project/thy/today/`)
+   - Handles both absolute and relative path resolution
+
+3. **Path Normalization**:
+   - Ensures consistent path formats across different operations
+   - Removes duplicate slashes, resolves parent directory references
+
+4. **Cache Directory Management**:
+   - Maintains isolated cache directories for Docker and local environments
+   - Ensures cache persistence across container restarts
+
+#### Path Resolution in Docker Context
+
+When running in Docker, the PathResolver handles the following path transformations:
+
+- **Host to Container**: `/Users/Thy/myproject/src/components` → `/project/thy/today/src/components`
+- **Container to Host**: `/project/thy/today/src/components` → `/Users/Thy/myproject/src/components`
+
+This bidirectional translation is crucial for operations like:
+- Reading source files from mounted volumes
+- Writing cache files to persistent storage
+- Reporting file locations in logs and error messages
+
+## MCP Client/Host Integration
+
+The Particle-Graph system integrates with the MCP (Model Control Protocol) client/host architecture to provide a seamless interface for AI assistants and other tools.
+
+### Communication Flow
+
+┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│                 │ JSON-RPC │                 │         │                 │
+│   MCP Client    │─────────▶│  Particle-Graph │─────────▶│  File System    │
+│                 │◀─────────│  (Docker)       │◀─────────│                 │
+└─────────────────┘         └─────────────────┘         └─────────────────┘
+
+### MCP Integration Components
+
+1. **JSON-RPC API Layer**:
+   - Exposes standardized functions like `createGraph`, `loadGraph`, `exportGraph`, and `listGraph`
+   - Provides consistent response formatting suitable for MCP client consumption
+   - Handles error conditions with structured error messages
+
+2. **Response Formatting**:
+   - All API functions return responses in a standard format:
+     ```json
+     {
+       "content": [{"type": "text", "text": "Operation result details"}],
+       "isError": false
+     }
+     ```
+   - Error responses include helpful diagnostic information:
+     ```json
+     {
+       "content": [{"type": "text", "text": "Error: Failed to locate path"}],
+       "isError": true
+     }
+     ```
+
+3. **Path Context Preservation**:
+   - The MCP client can provide paths in host format
+   - PathResolver transparently translates these to the appropriate Docker paths
+   - Results are translated back to host paths for display to the user
+
+### Common Use Cases
+
+1. **Creating Graphs from MCP Client**:
+   - MCP client requests `createGraph("components/Features/Events")`
+   - PathResolver resolves this to `/project/thy/today/components/Features/Events` in Docker
+   - Results reference paths in host format for user-friendly output
+
+2. **Exporting Graphs**:
+   - MCP client requests `exportGraph("Events")`
+   - System locates the cached graph, resolves all file paths to host format
+   - Returns a structured response with the export location in host path format
+
+3. **Listing Available Graphs**:
+   - MCP client requests `listGraph()`
+   - System returns formatted text listing all available graphs with their timestamps
+   - Response is structured for direct display in MCP client UI
+
 ## Directory Structure
 
 ```

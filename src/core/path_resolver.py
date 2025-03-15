@@ -1,23 +1,22 @@
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, Union
 
 class PathResolver:
     # Detect if running in Docker or locally
     if os.path.exists("/project"):
-        # Docker environment
+        # Docker environment with mount -v /Users/Thy/Today:/project
         PROJECT_ROOT = Path("/project")
-        # Host path that gets mounted to /project (for path translation)
-        HOST_PROJECT_PATH = "/Users/Thy/Today"
+        HOST_PROJECT_PATH = "/Users/Thy/Today"  # Matches your mount
     else:
-        # Local environment - use the current working directory
+        # Local environment
         PROJECT_ROOT = Path(os.getcwd())
         HOST_PROJECT_PATH = None
     
-    CACHE_DIR = PROJECT_ROOT / "particle_cache"
-    EXPORT_DIR = PROJECT_ROOT / "particle-graph"
+    # Adjusted to match your logs
+    CACHE_DIR = Path(PROJECT_ROOT / "particle-graph/cache")
+    EXPORT_DIR = Path(PROJECT_ROOT / "particle-graph")
     PARTICLE_EXTENSION = ".particle.json"
 
     @classmethod
@@ -31,8 +30,6 @@ class PathResolver:
         """Translate a host path to a container path if needed."""
         if not cls.HOST_PROJECT_PATH:
             return path
-            
-        # If the path starts with the host project path, replace it with the container project path
         if path.startswith(cls.HOST_PROJECT_PATH):
             return path.replace(cls.HOST_PROJECT_PATH, str(cls.PROJECT_ROOT))
         return path
@@ -41,9 +38,7 @@ class PathResolver:
     def resolve_path(cls, path: str, base: Path = PROJECT_ROOT) -> Path:
         """Resolve a path relative to a base, returning a normalized Path object."""
         try:
-            # First, translate any host paths to container paths
             path = cls.translate_host_path(path)
-            
             if Path(path).is_absolute():
                 return Path(path).resolve()
             return (base / path).resolve()
@@ -87,20 +82,11 @@ class PathResolver:
         
     @classmethod
     def read_json_file(cls, file_path: Union[str, Path]) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-        """
-        Read and parse a JSON file safely.
-        
-        Args:
-            file_path: Path to the JSON file to read
-            
-        Returns:
-            Tuple of (data, error): data is the parsed JSON if successful, error is an error message if failed
-        """
+        """Read and parse a JSON file safely."""
         try:
             path_obj = Path(file_path)
             if not path_obj.exists():
                 return None, f"File not found: {file_path}"
-                
             with open(path_obj, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             return data, None
@@ -111,21 +97,10 @@ class PathResolver:
             
     @classmethod
     def write_json_file(cls, file_path: Union[str, Path], data: Dict[str, Any]) -> Optional[str]:
-        """
-        Write data to a JSON file safely.
-        
-        Args:
-            file_path: Path to the JSON file to write
-            data: Dictionary of data to write to the file
-            
-        Returns:
-            None if successful, error message if failed
-        """
+        """Write data to a JSON file safely."""
         try:
             path_obj = Path(file_path)
-            # Create parent directories if they don't exist
             path_obj.parent.mkdir(parents=True, exist_ok=True)
-                
             with open(path_obj, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             return None

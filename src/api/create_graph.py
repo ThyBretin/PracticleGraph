@@ -45,9 +45,30 @@ def createGraph(path: str) -> Dict:
             feature_name = feature_path.split("/")[-1].lower() if "/" in feature_path else feature_path.lower()
             feature_names.append(feature_name)
             
-            resolved_path = str(PathResolver.resolve_path(feature_path))
-            feature_files = processFiles(resolved_path)
-            processed_files.extend(feature_files)
+            # Improve path resolution for specific features
+            try:
+                # First try a direct path within PROJECT_ROOT
+                resolved_path = str(PathResolver.resolve_path(feature_path))
+                
+                # If path appears incorrect (doesn't exist), try in thy/today/ directory
+                if not os.path.exists(resolved_path) and os.path.exists("/project"):
+                    potential_paths = [
+                        str(PathResolver.resolve_path(f"thy/today/{feature_path}")), 
+                        str(PathResolver.resolve_path(f"/project/thy/today/{feature_path}"))
+                    ]
+                    
+                    for potential_path in potential_paths:
+                        if os.path.exists(potential_path):
+                            logger.info(f"Found feature at alternate path: {potential_path}")
+                            resolved_path = potential_path
+                            break
+                
+                logger.debug(f"Resolved path for {feature_path}: {resolved_path}")
+                feature_files = processFiles(resolved_path)
+                processed_files.extend(feature_files)
+            except Exception as e:
+                logger.error(f"Error resolving path for {feature_path}: {str(e)}")
+                continue
             
         if not feature_names:
             logger.error("No valid features found in multi-feature request")
@@ -85,8 +106,30 @@ def createGraph(path: str) -> Dict:
     
     # Normalize path for single feature or "all"
     is_full_codebase = path.lower() in ("all", "codebase")
-    feature_path = str(PathResolver.PROJECT_ROOT) if is_full_codebase else str(PathResolver.resolve_path(path))
-    feature_name = "codebase" if is_full_codebase else (path.split("/")[-1].lower() if "/" in path else path.lower())
+    
+    if is_full_codebase:
+        feature_path = str(PathResolver.PROJECT_ROOT)
+        feature_name = "codebase"
+    else:
+        # Improved path resolution for specific features
+        # First, try resolving the path directly
+        feature_path = str(PathResolver.resolve_path(path))
+        feature_name = path.split("/")[-1].lower() if "/" in path else path.lower()
+        
+        # If path doesn't exist, try common alternatives
+        if not os.path.exists(feature_path) and os.path.exists("/project"):
+            logger.debug(f"Path {feature_path} doesn't exist, trying alternatives...")
+            alternate_paths = [
+                str(PathResolver.resolve_path(f"thy/today/{path}")),
+                str(PathResolver.resolve_path(f"/project/thy/today/{path}"))
+            ]
+            
+            for alt_path in alternate_paths:
+                if os.path.exists(alt_path):
+                    logger.info(f"Found feature at alternate path: {alt_path}")
+                    feature_path = alt_path
+                    break
+    
     logger.debug(f"Feature name: {feature_name}, Path: {feature_path}")
     
     # Process files to build the graph
@@ -94,7 +137,7 @@ def createGraph(path: str) -> Dict:
     
     if not processed_files:
         logger.error(f"No Particle data found for {feature_name}. Run addParticle first.")
-        return {"error": "No Particle data found. Run addParticle first.", "status": "ERROR"}
+        return {"error": f"No Particle data found for path '{path}'. Run addParticle first.", "status": "ERROR"}
 
     # Split files
     logger.debug(f"Splitting {len(processed_files)} files...")
@@ -132,7 +175,7 @@ def createGraph(path: str) -> Dict:
         "app_story": app_story
     }
 
-    # Filter empty arrays but preserve tech_stack
+    # Filter empty values but preserve tech_stack
     logger.debug("Filtering manifest...")
     manifest = filter_empty(manifest, preserve_tech_stack=True)
 

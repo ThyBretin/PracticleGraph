@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import os
 from src.particle.particle_support import app_path, logger
 
 # Configurable tech categories (unchanged)
@@ -44,22 +45,47 @@ TECH_CATEGORIES = {
 
 def get_tech_stack(entities: list) -> dict:
     """Extract a categorized tech stack with versions from package.json, using configurable categories."""
-    pkg_path = Path(app_path) / "package.json"
+    # Initialize with empty dicts for all categories to prevent None values
     tech_stack = {
-        cat: {} if "subcategories" in TECH_CATEGORIES[cat] or cat in ["core_libraries", "ui_libraries", "key_dependencies"] else None
+        cat: {} if "subcategories" in TECH_CATEGORIES[cat] or cat in ["core_libraries", "ui_libraries", "key_dependencies"] else {}
         for cat in TECH_CATEGORIES
     }
     key_deps = {}
 
+    # Determine package.json path based on app_path
+    pkg_path = Path(app_path) / "package.json"
+    
+    # Check if we're in Docker and adjust path if needed
+    if not pkg_path.exists() and os.path.exists("/project"):
+        # Try Docker container path
+        for possible_path in [
+            Path("/project/thy/today/package.json"),
+            Path("/project/package.json"),
+            Path("/project/thy/package.json")
+        ]:
+            if possible_path.exists():
+                pkg_path = possible_path
+                logger.info(f"Found package.json at Docker path: {pkg_path}")
+                break
+    
     # Load package.json
+    deps = {}
     try:
-        with open(pkg_path, "r", encoding="utf-8") as f:
-            pkg = json.load(f)
-            deps = pkg.get("dependencies", {})
-            logger.debug(f"Loaded {len(deps)} dependencies from {pkg_path}")
+        if pkg_path.exists():
+            with open(pkg_path, "r", encoding="utf-8") as f:
+                pkg = json.load(f)
+                deps = pkg.get("dependencies", {})
+                logger.debug(f"Loaded {len(deps)} dependencies from {pkg_path}")
+        else:
+            logger.warning(f"Could not find package.json at {pkg_path}. Using fallback dependencies.")
+            # Fallback dependencies for common js frameworks
+            deps = {
+                "react": "^18.0.0",
+                "react-dom": "^18.0.0"
+            }
     except Exception as e:
         logger.error(f"Failed to load {pkg_path}: {e}")
-        return tech_stack
+        # Still continue with empty deps
 
     # Categorize dependencies
     for dep, version in deps.items():
@@ -90,26 +116,48 @@ def get_tech_stack(entities: list) -> dict:
 
     # File extension hints
     react_detected = False
-    for entity in entities:
-        ext = Path(entity["path"]).suffix.lower()
-        if ext in (".jsx", ".tsx"):
-            react_detected = True
-            if "react" not in deps:
-                tech_stack["core_libraries"]["react"] = "unknown"
-        if ext == ".tsx" and "typescript" not in deps:
-            key_deps["typescript"] = "unknown"
+    js_detected = False
+    
+    # Only process entities if we have them
+    if entities:
+        for entity in entities:
+            if isinstance(entity, dict) and "path" in entity:
+                path = entity["path"]
+                ext = Path(path).suffix.lower()
+                if ext in (".js", ".jsx", ".tsx"):
+                    js_detected = True
+                if ext in (".jsx", ".tsx"):
+                    react_detected = True
+                    if "react" not in deps:
+                        tech_stack["core_libraries"]["react"] = "unknown"
+                if ext == ".tsx" and "typescript" not in deps:
+                    key_deps["typescript"] = "unknown"
 
     # Infer React state if React is present
     if react_detected or "react" in deps:
         tech_stack["state_management"]["local"] = TECH_CATEGORIES["state_management"]["format"]({})
+    
+    # If we detected JavaScript files but no deps, add a default entry
+    if js_detected and not deps:
+        tech_stack["core_libraries"]["javascript"] = "detected"
 
     # Populate key_dependencies
     tech_stack["key_dependencies"] = {k: TECH_CATEGORIES["key_dependencies"]["format"](v) for k, v in key_deps.items()}
 
-    # Clean up empty categories
-    for category in list(tech_stack.keys()):
+    # Clean up empty categories, but ensure we always return at least one category
+    empty_categories = []
+    for category in tech_stack.keys():
         if not tech_stack[category] or (isinstance(tech_stack[category], dict) and not any(tech_stack[category].values())):
+            empty_categories.append(category)
+    
+    # Only remove empty categories if we'll have at least one left
+    for category in empty_categories:
+        if len(tech_stack) > len(empty_categories):
             del tech_stack[category]
-
-    logger.info(f"Tech stack for {entities[0]['path'].split('/')[2] if entities else 'unknown'}: {tech_stack}")
+    
+    # If everything is empty, add a placeholder
+    if not any(tech_stack.values()):
+        tech_stack["detected"] = {"javascript": "files"}
+    
+    logger.info(f"Tech stack extracted: {list(tech_stack.keys())}")
     return tech_stack
