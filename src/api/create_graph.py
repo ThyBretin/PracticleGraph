@@ -189,20 +189,22 @@ def createGraph(path: str) -> Dict:
     graph_path = PathResolver.get_graph_path(feature_name)
     try:
         logger.debug(f"Writing graph to {graph_path}")
+        
+        # Serialize and count tokens before writing to file
+        manifest_json = json.dumps(manifest)
+        token_count = len(tokenizer.encode(manifest_json))
+        
+        # Add token count to the manifest itself BEFORE writing to file
+        manifest["token_count"] = token_count
+        
+        # Write the manifest with token count to the file
         error = PathResolver.write_json_file(graph_path, manifest)
         if error:
             logger.error(f"Error writing graph to {graph_path}: {error}")
             return {"error": f"Failed to write graph: {error}", "status": "ERROR"}
         
-        # Serialize, count tokens, and compress for cache
-        manifest_json = json.dumps(manifest)
-        token_count = len(tokenizer.encode(manifest_json))
-        
-        # Add token count to the manifest itself
-        manifest["token_count"] = token_count
-        
-        # Re-serialize with token count included
-        manifest_json = json.dumps(manifest)
+        # Compress for cache
+        manifest_json = json.dumps(manifest)  # Re-serialize with token count
         compressed = zlib.compress(manifest_json.encode())
         
         logger.info(f"Created graph for {feature_name}: {len(processed_files)} files, {manifest['coverage_percentage']}% coverage, {token_count} tokens")
@@ -215,7 +217,7 @@ def createGraph(path: str) -> Dict:
         logger.error(f"Cache write failed: {str(e)}")
         return {"error": f"Cache write failed: {str(e)}", "status": "ERROR"}
         
-    return {"manifest": manifest, "token_count": token_count}
+    return manifest  # Return the manifest directly with token_count included
 
 def processFiles(feature_path: str) -> List[Dict]:
     """

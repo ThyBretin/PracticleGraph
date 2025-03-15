@@ -32,20 +32,20 @@ def exportGraph(path: str) -> dict:
     
     # Normalize path to lowercase feature name
     feature_name = path.split("/")[-1].lower() if "," not in path else "_".join(p.lower() for p in path.split(","))
-    result = loadGraph(feature_name)
+    manifest = loadGraph(feature_name)
     
     # Ensure manifest is a dictionary to prevent 'str' object has no attribute 'keys' error
-    if not isinstance(result, dict):
-        error_msg = f"Invalid graph format for {feature_name}: Expected dict, got {type(result)}"
+    if not isinstance(manifest, dict):
+        error_msg = f"Invalid graph format for {feature_name}: Expected dict, got {type(manifest)}"
         logger.error(error_msg)
         return {"error": error_msg, "isError": True}
         
-    if "error" in result:
-        logger.error(f"Failed to load graph for {feature_name}: {result['error']}")
-        return {"error": result["error"], "isError": True}
+    if "error" in manifest:
+        logger.error(f"Failed to load graph for {feature_name}: {manifest['error']}")
+        return {"error": manifest["error"], "isError": True}
     
-    manifest = result.get("manifest", result)
-    token_count = result.get("token_count", 0)
+    # Get token count from manifest
+    token_count = manifest.get("token_count", 0)
     
     # Extract entities
     is_codebase = path.lower() in ("codebase", "all")

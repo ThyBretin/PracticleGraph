@@ -46,7 +46,7 @@ def loadGraph(path: str) -> dict:
                 
                 logger.info(f"Loaded codebase graph with {codebase_graph.get('file_count', 0)} files ({codebase_graph.get('coverage_percentage', 0)}% coverage), {token_count} tokens")
                 
-                return {"manifest": codebase_graph, "token_count": token_count}
+                return codebase_graph
             except Exception as e:
                 logger.error(f"Error decompressing codebase graph: {str(e)}")
                 return {"error": f"Failed to decompress codebase graph: {str(e)}"}
@@ -81,7 +81,7 @@ def loadGraph(path: str) -> dict:
                 graph["token_count"] = token_count
                 
             logger.info(f"Loaded single Particle Graph: {feature}, {token_count} tokens")
-            return {"manifest": graph, "token_count": token_count}
+            return graph
         except Exception as e:
             logger.error(f"Error decompressing graph for {feature}: {str(e)}")
             return {"error": f"Failed to decompress graph: {str(e)}"}
@@ -103,7 +103,7 @@ def loadGraph(path: str) -> dict:
                 multi_graph["token_count"] = token_count
                 
             logger.info(f"Loaded cached multi-feature graph for: {feature_list}, {token_count} tokens")
-            return {"manifest": multi_graph, "token_count": token_count}
+            return multi_graph
         except Exception as e:
             logger.error(f"Error decompressing multi-feature graph: {str(e)}")
             return {"error": f"Failed to decompress multi-feature graph: {str(e)}"}
@@ -188,4 +188,4 @@ def loadGraph(path: str) -> dict:
     cache_manager.set(cache_key, compressed)
     
     logger.info(f"Aggregated Particles Graph for {feature_list} with {file_count} files ({coverage_percentage}% coverage), {token_count} tokens")
-    return {"manifest": manifest, "token_count": token_count}
+    return manifest
