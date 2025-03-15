@@ -12,6 +12,36 @@ Maintain up-to-date graph representation of code relationships
 
 Particle-Graph is a system designed to analyze and generate graph representations of code components, particularly focusing on JavaScript/JSX codebases. The system extracts metadata ("particles") from source files, builds relationship graphs between components, and provides APIs for creating, updating, loading, and exporting these graphs that can be used for code analysis, onboarding and AI assistance.
 
+### Core Aggregation
+
+#### addParticle():
+Focus: File-level metadata.
+- Looks For: 
+  - routes: Routes (not yet).
+  - props: Component props (not yet).
+  - hooks: React hooks (e.g., useState).
+  - calls: API calls (e.g., fetch).
+  - logic: Conditions + actions (e.g., if → console.error).
+  - depends_on: Imports.
+  - jsx: JSX elements (not yet).
+  - comments: TODOs/docs.
+
+Aggregation type: Granular, per-file.
+
+#### exportGraph():
+Focus: Aggregated graph—features or codebase.
+- Looks For: 
+  - nodes: Files with Particle data.
+  - edges: Dependency links.
+  - files: File dictionary.
+  - tech_stack: Libraries used.
+  - state_machine: State logic (to add).
+  - dependencies: Dep counts/links.
+  - metadata: Stats (e.g., node_count).
+  - file_count/coverage_percentage (for "all").
+
+Aggregation type: Big picture, relational.
+
 ## Directory Structure
 
 ```

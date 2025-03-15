@@ -31,4 +31,5 @@ ENV PYTHONPATH=/app
 
 RUN pip install fastmcp pathspec
 RUN npm install @babel/parser
+RUN npm install -g prettier
 CMD ["python", "server.py"]

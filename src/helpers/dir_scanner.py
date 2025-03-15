@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from src.particle.particle_support import app_path, logger
+from src.helpers.gitignore_parser import load_gitignore
 
 def list_dir(path: str) -> dict:
     logger.info(f"Received list_dir request with path: {path}")
@@ -23,3 +24,17 @@ def list_dir(path: str) -> dict:
         })
     logger.debug(f"Entries in {path}: {entries}")
     return {"entries": entries, "source": "server"}
+
+def scan_directory(root: Path, extensions: tuple = (".js", ".jsx")) -> list:
+    """Scan directory for JS files, respecting .gitignore."""
+    gitignore = load_gitignore(str(root))
+    files = []
+    for path in root.rglob("*"):
+        rel_path = path.relative_to(root)
+        if gitignore.match_file(rel_path):
+            logger.debug(f"Skipping {rel_path} (gitignore)")
+            continue
+        if path.is_file() and path.suffix in extensions:
+            files.append(str(rel_path))
+    logger.info(f"Scanned {root}: found {len(files)} JS files")
+    return files

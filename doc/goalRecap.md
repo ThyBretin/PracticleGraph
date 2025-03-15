@@ -428,7 +428,6 @@ Note: We’d need those files to validate—NavigationBar.jsx is mentioned but n
 5. Implementation Guidelines
 Done:
 Modular flags (e.g., rich in generate_particle()).
-
 add_particle.py supports --rich (assumed from design).
 
 Pending:
