@@ -1,7 +1,14 @@
 from datetime import datetime
+import json
+import zlib
+import tiktoken
+
 from src.particle.particle_support import logger
 from src.core.path_resolver import PathResolver
 from src.core.cache_manager import cache_manager
+
+# Tokenizer setup
+tokenizer = tiktoken.get_encoding("cl100k_base")
 
 def loadGraph(path: str) -> dict:
     """
@@ -20,59 +27,86 @@ def loadGraph(path: str) -> dict:
     # Handle special codebase parameter
     if path.lower() in ("codebase", "all"):
         # Load the codebase-wide Particle Graph
-        codebase_graph, found = cache_manager.get("__codebase__")
+        cached, found = cache_manager.get("__codebase__")
         if found:
             logger.info("Loading codebase-wide Particle Graph")
             
-            # Ensure stats are correct
-            routes = codebase_graph.get("routes", {})
-            data = codebase_graph.get("data", {})
-            components = codebase_graph.get("components", {})
-            
-            # Calculate file count (if not already set correctly)
-            file_count = sum(len(collection) for collection in [routes, data, components])
-            if file_count > 0:
-                codebase_graph["file_count"] = file_count
+            # Decompress the cached data
+            try:
+                manifest_json = zlib.decompress(cached).decode()
+                codebase_graph = json.loads(manifest_json)
                 
-                # For codebase graph, js_files_total is set during creation but ensure it's present
-                if "js_files_total" not in codebase_graph or codebase_graph["js_files_total"] == 0:
-                    codebase_graph["js_files_total"] = file_count  # Fallback
-                    
-                # Update coverage percentage
-                js_files_total = codebase_graph["js_files_total"]
-                codebase_graph["coverage_percentage"] = round((file_count / js_files_total * 100) if js_files_total > 0 else 0, 2)
-            
-            logger.info(f"Loaded codebase graph with {codebase_graph.get('file_count', 0)} files ({codebase_graph.get('coverage_percentage', 0)}% coverage)")
-            
-            # Update cached version if we made changes
-            cache_manager.set("__codebase__", codebase_graph)
-            return codebase_graph
+                # Use existing token count if available, otherwise calculate it
+                if "token_count" in codebase_graph:
+                    token_count = codebase_graph["token_count"]
+                else:
+                    token_count = len(tokenizer.encode(manifest_json))
+                    # Add token count to the manifest
+                    codebase_graph["token_count"] = token_count
+                
+                logger.info(f"Loaded codebase graph with {codebase_graph.get('file_count', 0)} files ({codebase_graph.get('coverage_percentage', 0)}% coverage), {token_count} tokens")
+                
+                return {"manifest": codebase_graph, "token_count": token_count}
+            except Exception as e:
+                logger.error(f"Error decompressing codebase graph: {str(e)}")
+                return {"error": f"Failed to decompress codebase graph: {str(e)}"}
         else:
             error_msg = "Codebase Particle Graph not found. Run createGraph('all') first."
             logger.error(error_msg)
             return {"error": error_msg}
     
-    # Parse features (e.g., "Events,Role" → ["events", "role"]
+    # Parse comma-separated features
     feature_list = [f.strip().lower() for f in path.split(",")]
     logger.debug(f"Loading Particle Graphs: {feature_list}")
 
     # Single feature: return directly from cache
     if len(feature_list) == 1:
         feature = feature_list[0]
-        graph, found = cache_manager.get(feature)
+        cached, found = cache_manager.get(feature)
         if not found:
             error_msg = f"Particle Graph '{feature}' not found in cache"
             logger.error(error_msg)
             return {"error": error_msg}
-        logger.info(f"Loaded single Particle Graph: {feature}")
-        return graph
+            
+        try:
+            manifest_json = zlib.decompress(cached).decode()
+            graph = json.loads(manifest_json)
+            
+            # Use existing token count if available, otherwise calculate it
+            if "token_count" in graph:
+                token_count = graph["token_count"]
+            else:
+                token_count = len(tokenizer.encode(manifest_json))
+                # Add token count to the manifest
+                graph["token_count"] = token_count
+                
+            logger.info(f"Loaded single Particle Graph: {feature}, {token_count} tokens")
+            return {"manifest": graph, "token_count": token_count}
+        except Exception as e:
+            logger.error(f"Error decompressing graph for {feature}: {str(e)}")
+            return {"error": f"Failed to decompress graph: {str(e)}"}
 
     # Check if this exact multi-feature combination already exists in cache
     cache_key = "_".join(feature_list)
-    cached_graph, found = cache_manager.get(cache_key)
+    cached, found = cache_manager.get(cache_key)
     if found:
-        logger.info(f"Loaded cached multi-feature graph for: {feature_list}")
-        return cached_graph
+        try:
+            manifest_json = zlib.decompress(cached).decode()
+            multi_graph = json.loads(manifest_json)
+            
+            # Use existing token count if available, otherwise calculate it
+            if "token_count" in multi_graph:
+                token_count = multi_graph["token_count"]
+            else:
+                token_count = len(tokenizer.encode(manifest_json))
+                # Add token count to the manifest
+                multi_graph["token_count"] = token_count
+                
+            logger.info(f"Loaded cached multi-feature graph for: {feature_list}, {token_count} tokens")
+            return {"manifest": multi_graph, "token_count": token_count}
+        except Exception as e:
+            logger.error(f"Error decompressing multi-feature graph: {str(e)}")
+            return {"error": f"Failed to decompress multi-feature graph: {str(e)}"}
 
     # Multiple features: check all exist
     missing = [f for f in feature_list if not cache_manager.has_key(f)]
@@ -88,15 +122,21 @@ def loadGraph(path: str) -> dict:
         # Fallback: Aggregate tech_stack from features (though this shouldn't be necessary)
         tech_stack = {}
         for feature in feature_list:
-            graph, _ = cache_manager.get(feature)
-            feature_tech = graph.get("tech_stack", {})
-            for category, value in feature_tech.items():
-                if isinstance(value, dict):
-                    if category not in tech_stack:
-                        tech_stack[category] = {}
-                    tech_stack[category].update(value)
-                else:
-                    tech_stack[category] = value
+            cached, _ = cache_manager.get(feature)
+            try:
+                manifest_json = zlib.decompress(cached).decode()
+                graph = json.loads(manifest_json)
+                feature_tech = graph.get("tech_stack", {})
+                for category, value in feature_tech.items():
+                    if isinstance(value, dict):
+                        if category not in tech_stack:
+                            tech_stack[category] = {}
+                        tech_stack[category].update(value)
+                    else:
+                        tech_stack[category] = value
+            except Exception as e:
+                logger.error(f"Error decompressing graph for tech stack aggregation: {str(e)}")
+                continue
 
     # Group files by feature
     aggregated_files = {}
@@ -104,14 +144,20 @@ def loadGraph(path: str) -> dict:
     js_files_total = 0
     
     for feature in feature_list:
-        feature_graph, _ = cache_manager.get(feature)
-        aggregated_files[feature] = feature_graph.get("files", {})
-        
-        # Aggregate stats if available
-        if "file_count" in feature_graph:
-            file_count += feature_graph.get("file_count", 0)
-        if "js_files_total" in feature_graph:
-            js_files_total += feature_graph.get("js_files_total", 0)
+        cached, _ = cache_manager.get(feature)
+        try:
+            manifest_json = zlib.decompress(cached).decode()
+            feature_graph = json.loads(manifest_json)
+            aggregated_files[feature] = feature_graph.get("files", {})
+            
+            # Aggregate stats if available
+            if "file_count" in feature_graph:
+                file_count += feature_graph.get("file_count", 0)
+            if "js_files_total" in feature_graph:
+                js_files_total += feature_graph.get("js_files_total", 0)
+        except Exception as e:
+            logger.error(f"Error decompressing graph for file aggregation: {str(e)}")
+            continue
 
     # Calculate coverage percentage
     coverage_percentage = round((file_count / js_files_total * 100) if js_files_total > 0 else 0, 2)
@@ -127,8 +173,19 @@ def loadGraph(path: str) -> dict:
         "coverage_percentage": coverage_percentage
     }
     
-    # Cache this combination for future use
-    cache_manager.set(cache_key, manifest)
+    # Serialize and compress before caching
+    manifest_json = json.dumps(manifest)
+    token_count = len(tokenizer.encode(manifest_json))
     
-    logger.info(f"Aggregated Particles Graph for {feature_list} with {file_count} files ({coverage_percentage}% coverage)")
-    return manifest
+    # Add token count to the manifest itself
+    manifest["token_count"] = token_count
+    
+    # Re-serialize with token count included
+    manifest_json = json.dumps(manifest)
+    compressed = zlib.compress(manifest_json.encode())
+    
+    # Cache this combination for future use
+    cache_manager.set(cache_key, compressed)
+    
+    logger.info(f"Aggregated Particles Graph for {feature_list} with {file_count} files ({coverage_percentage}% coverage), {token_count} tokens")
+    return {"manifest": manifest, "token_count": token_count}

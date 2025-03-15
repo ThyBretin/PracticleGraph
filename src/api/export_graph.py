@@ -3,6 +3,8 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+import tiktoken
+
 from src.particle.particle_support import logger
 from src.api.load_graph import loadGraph
 from src.helpers.data_cleaner import filter_empty
@@ -10,6 +12,9 @@ from src.core.path_resolver import PathResolver
 from src.core.cache_manager import cache_manager
 from src.graph.graph_support import postProcessGraph, linkDependencies, traceReasoning
 from src.graph.tech_stack import get_tech_stack
+
+# Tokenizer setup
+tokenizer = tiktoken.get_encoding("cl100k_base")
 
 def exportGraph(path: str) -> dict:
     """
@@ -27,17 +32,20 @@ def exportGraph(path: str) -> dict:
     
     # Normalize path to lowercase feature name
     feature_name = path.split("/")[-1].lower() if "," not in path else "_".join(p.lower() for p in path.split(","))
-    manifest = loadGraph(feature_name)
+    result = loadGraph(feature_name)
     
     # Ensure manifest is a dictionary to prevent 'str' object has no attribute 'keys' error
-    if not isinstance(manifest, dict):
-        error_msg = f"Invalid graph format for {feature_name}: Expected dict, got {type(manifest)}"
+    if not isinstance(result, dict):
+        error_msg = f"Invalid graph format for {feature_name}: Expected dict, got {type(result)}"
         logger.error(error_msg)
         return {"error": error_msg, "isError": True}
         
-    if "error" in manifest:
-        logger.error(f"Failed to load graph for {feature_name}: {manifest['error']}")
-        return {"error": manifest["error"], "isError": True}
+    if "error" in result:
+        logger.error(f"Failed to load graph for {feature_name}: {result['error']}")
+        return {"error": result["error"], "isError": True}
+    
+    manifest = result.get("manifest", result)
+    token_count = result.get("token_count", 0)
     
     # Extract entities
     is_codebase = path.lower() in ("codebase", "all")
@@ -147,17 +155,24 @@ def exportGraph(path: str) -> dict:
             summary += f"Tech stack: {', '.join(tech_list)}\n"
         summary += (
             f"Complete structure of all components with metadata\n"
-            f"Dependencies and relationships between components"
+            f"Dependencies and relationships between components\n"
+            f"{token_count} tokens analyzed"
         )
         
         return {
-            "content": [{"type": "text", "text": summary}],
+            "path": output_path,
+            "status": "SUCCESS",
             "summary": summary,
-            "isError": False
+            "file_count": file_count,
+            "node_count": node_count,
+            "dependency_count": dependency_count,
+            "tech_count": len(tech_list),
+            "token_count": token_count
         }
     else:
         logger.info(f"Exported graph to {output_path}")
         return {
-            "content": [{"type": "text", "text": f"Saved {output_path}"}], 
-            "isError": False
+            "path": output_path,
+            "status": "SUCCESS",
+            "token_count": token_count
         }

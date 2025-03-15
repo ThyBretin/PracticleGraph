@@ -1,8 +1,11 @@
 import json
 import os
+import zlib
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+
+import tiktoken
 
 from src.graph.aggregate_app_story import aggregate_app_story
 from src.graph.tech_stack import get_tech_stack
@@ -12,6 +15,9 @@ from src.particle.file_handler import read_particle
 from src.core.path_resolver import PathResolver
 from src.core.cache_manager import cache_manager
 from src.helpers.gitignore_parser import load_gitignore
+
+# Tokenizer setup
+tokenizer = tiktoken.get_encoding("cl100k_base")
 
 def createGraph(path: str) -> Dict:
     """
@@ -188,16 +194,28 @@ def createGraph(path: str) -> Dict:
             logger.error(f"Error writing graph to {graph_path}: {error}")
             return {"error": f"Failed to write graph: {error}", "status": "ERROR"}
         
+        # Serialize, count tokens, and compress for cache
+        manifest_json = json.dumps(manifest)
+        token_count = len(tokenizer.encode(manifest_json))
+        
+        # Add token count to the manifest itself
+        manifest["token_count"] = token_count
+        
+        # Re-serialize with token count included
+        manifest_json = json.dumps(manifest)
+        compressed = zlib.compress(manifest_json.encode())
+        
+        logger.info(f"Created graph for {feature_name}: {len(processed_files)} files, {manifest['coverage_percentage']}% coverage, {token_count} tokens")
+        
         if is_full_codebase:
-            cache_manager.set("__codebase__", manifest)
+            cache_manager.set("__codebase__", compressed)
         else:
-            cache_manager.set(feature_name, manifest)
+            cache_manager.set(feature_name, compressed)
     except Exception as e:
         logger.error(f"Cache write failed: {str(e)}")
         return {"error": f"Cache write failed: {str(e)}", "status": "ERROR"}
         
-    logger.info(f"Graph created for {feature_name}: {len(processed_files)} files, {manifest['coverage_percentage']}% coverage")
-    return manifest
+    return {"manifest": manifest, "token_count": token_count}
 
 def processFiles(feature_path: str) -> List[Dict]:
     """
