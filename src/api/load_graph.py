@@ -67,25 +67,36 @@ def loadGraph(path: str) -> dict:
         logger.info(f"Loaded single Particle Graph: {feature}")
         return graph
 
-    # Multiple features: aggregate
+    # Check if this exact multi-feature combination already exists in cache
+    cache_key = "_".join(feature_list)
+    cached_graph, found = cache_manager.get(cache_key)
+    if found:
+        logger.info(f"Loaded cached multi-feature graph for: {feature_list}")
+        return cached_graph
+
+    # Multiple features: check all exist
     missing = [f for f in feature_list if not cache_manager.has_key(f)]
     if missing:
         error_msg = f"Particles Graphs not found in cache: {missing}"
         logger.error(error_msg)
         return {"error": error_msg}
 
-    # Aggregate tech_stack (deduplicate)
-    aggregated_tech = {}
-    for feature in feature_list:
-        graph, _ = cache_manager.get(feature)
-        tech = graph["tech_stack"]
-        for category, value in tech.items():
-            if isinstance(value, dict):
-                if category not in aggregated_tech:
-                    aggregated_tech[category] = {}
-                aggregated_tech[category].update(value)
-            else:
-                aggregated_tech[category] = value
+    # Get the global tech stack (if available)
+    tech_stack, found = cache_manager.get("tech_stack")
+    if not found:
+        logger.warning("Global tech stack not found, aggregating from features")
+        # Fallback: Aggregate tech_stack from features (though this shouldn't be necessary)
+        tech_stack = {}
+        for feature in feature_list:
+            graph, _ = cache_manager.get(feature)
+            feature_tech = graph.get("tech_stack", {})
+            for category, value in feature_tech.items():
+                if isinstance(value, dict):
+                    if category not in tech_stack:
+                        tech_stack[category] = {}
+                    tech_stack[category].update(value)
+                else:
+                    tech_stack[category] = value
 
     # Group files by feature
     aggregated_files = {}
@@ -94,13 +105,13 @@ def loadGraph(path: str) -> dict:
     
     for feature in feature_list:
         feature_graph, _ = cache_manager.get(feature)
-        aggregated_files[feature] = feature_graph["files"]
+        aggregated_files[feature] = feature_graph.get("files", {})
         
         # Aggregate stats if available
         if "file_count" in feature_graph:
-            file_count += feature_graph["file_count"]
+            file_count += feature_graph.get("file_count", 0)
         if "js_files_total" in feature_graph:
-            js_files_total += feature_graph["js_files_total"]
+            js_files_total += feature_graph.get("js_files_total", 0)
 
     # Calculate coverage percentage
     coverage_percentage = round((file_count / js_files_total * 100) if js_files_total > 0 else 0, 2)
@@ -109,12 +120,15 @@ def loadGraph(path: str) -> dict:
         "aggregate": True,
         "features": feature_list,
         "last_loaded": datetime.utcnow().isoformat() + "Z",
-        "tech_stack": aggregated_tech,
+        "tech_stack": tech_stack,
         "files": aggregated_files,
         "file_count": file_count,
         "js_files_total": js_files_total,
         "coverage_percentage": coverage_percentage
     }
+    
+    # Cache this combination for future use
+    cache_manager.set(cache_key, manifest)
     
     logger.info(f"Aggregated Particles Graph for {feature_list} with {file_count} files ({coverage_percentage}% coverage)")
     return manifest

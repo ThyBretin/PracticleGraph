@@ -7,6 +7,7 @@ from src.particle.particle_support import logger
 from src.api.load_graph import loadGraph
 from src.helpers.data_cleaner import filter_empty
 from src.core.path_resolver import PathResolver
+from src.core.cache_manager import cache_manager
 from src.graph.graph_support import postProcessGraph, linkDependencies, traceReasoning
 from src.graph.tech_stack import get_tech_stack
 
@@ -31,7 +32,7 @@ def exportGraph(path: str) -> dict:
         logger.error(f"Failed to load graph for {feature_name}: {manifest['error']}")
         return {"error": manifest["error"]}
     
-    # Extract entities and ensure tech stack
+    # Extract entities
     is_codebase = path.lower() in ("codebase", "all")
     entities = []
     if isinstance(manifest, dict):
@@ -41,12 +42,21 @@ def exportGraph(path: str) -> dict:
             for feature_files in manifest.get("files", {}).values():
                 entities.extend([{"path": k, "type": v.get("type", "file")} for k, v in feature_files.items()])
     
-    # Ensure tech_stack is present
-    if entities and "tech_stack" not in manifest:
-        try:
-            manifest["tech_stack"] = get_tech_stack(entities)
-        except Exception as e:
-            logger.warning(f"Tech stack generation failed: {str(e)}")
+    # Ensure tech_stack is present (use global cache if available)
+    if "tech_stack" not in manifest or not manifest["tech_stack"]:
+        tech_stack, found = cache_manager.get("tech_stack")
+        if found:
+            logger.info("Using globally cached tech stack")
+            manifest["tech_stack"] = tech_stack
+        elif entities:
+            # Fallback: Regenerate if not in cache and we have entities
+            try:
+                logger.warning("Tech stack not found in cache, regenerating")
+                manifest["tech_stack"] = get_tech_stack(entities)
+                # Cache it for future use
+                cache_manager.set("tech_stack", manifest["tech_stack"])
+            except Exception as e:
+                logger.warning(f"Tech stack generation failed: {str(e)}")
     
     # Apply post-processing if applicable
     if isinstance(manifest, dict) and "files" in manifest and not manifest.get("aggregate"):
@@ -62,7 +72,7 @@ def exportGraph(path: str) -> dict:
         manifest["js_files_total"] = manifest.get("js_files_total", file_count)
         manifest["coverage_percentage"] = manifest.get("coverage_percentage", 100.0)
         manifest["exported_at"] = datetime.utcnow().isoformat() + "Z"
-        manifest = filter_empty(manifest)
+        manifest = filter_empty(manifest, preserve_tech_stack=True)
         timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         filename = f"codebase_graph_{timestamp}.json"
     else:

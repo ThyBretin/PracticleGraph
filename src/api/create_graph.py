@@ -20,57 +20,78 @@ def createGraph(path: str) -> Dict:
     Args:
         path: Path to create graph for, relative to PROJECT_ROOT
               Special values: "all" or "codebase" for full graph
+              Can be comma-separated for multiple features (e.g., "Events,Navigation")
     
     Returns:
         Dict: The created graph manifest
     """
     logger.info(f"Creating graph for path: {path}")
     
-    # Normalize path
+    # Check if it's a multi-feature request
+    if "," in path:
+        features = [feat.strip() for feat in path.split(",")]
+        logger.info(f"Creating multi-feature graph for: {features}")
+        
+        # Process each feature path to build a list of processed files
+        processed_files = []
+        feature_names = []
+        
+        for feature_path in features:
+            # Skip "all" and "codebase" in multi-feature as they are handled separately
+            if feature_path.lower() in ("all", "codebase"):
+                logger.warning(f"Skipping '{feature_path}' in multi-feature request - use it alone instead")
+                continue
+                
+            feature_name = feature_path.split("/")[-1].lower() if "/" in feature_path else feature_path.lower()
+            feature_names.append(feature_name)
+            
+            resolved_path = str(PathResolver.resolve_path(feature_path))
+            feature_files = processFiles(resolved_path)
+            processed_files.extend(feature_files)
+            
+        if not feature_names:
+            logger.error("No valid features found in multi-feature request")
+            return {"error": "No valid features found in multi-feature request", "status": "ERROR"}
+            
+        # Compute full tech stack and cache it globally
+        tech_stack = get_tech_stack(processed_files)
+        cache_manager.set("tech_stack", tech_stack)
+        
+        # Prepare the aggregate manifest
+        aggregate_manifest = {
+            "aggregate": True,
+            "features": feature_names,
+            "last_crawled": datetime.utcnow().isoformat() + "Z",
+            "tech_stack": tech_stack,
+            "files": {},
+            "file_count": len(processed_files),
+        }
+        
+        # Add files from each feature to the aggregate manifest
+        for feature_name in feature_names:
+            feature_graph, found = cache_manager.get(feature_name)
+            if found:
+                aggregate_manifest["files"][feature_name] = feature_graph.get("files", {})
+        
+        # Filter empty values but preserve tech_stack
+        aggregate_manifest = filter_empty(aggregate_manifest, preserve_tech_stack=True)
+        
+        # Cache the aggregate manifest
+        cache_key = "_".join(feature_names)
+        cache_manager.set(cache_key, aggregate_manifest)
+        
+        logger.info(f"Created aggregate graph for {feature_names}: {len(processed_files)} files")
+        return aggregate_manifest
+    
+    # Normalize path for single feature or "all"
     is_full_codebase = path.lower() in ("all", "codebase")
     feature_path = str(PathResolver.PROJECT_ROOT) if is_full_codebase else str(PathResolver.resolve_path(path))
     feature_name = "codebase" if is_full_codebase else (path.split("/")[-1].lower() if "/" in path else path.lower())
     logger.debug(f"Feature name: {feature_name}, Path: {feature_path}")
     
-    # Load gitignore
-    gitignore = load_gitignore(feature_path)
-    logger.debug(f"Gitignore loaded for {feature_path}")
-
-    # Gather particle data (no addParticle call)
-    particle_data = []
-    processed_files = []
-    js_files_total = 0
+    # Process files to build the graph
+    processed_files = processFiles(feature_path)
     
-    logger.info(f"Scanning {feature_path} for existing Particle data...")
-    for root, dirs, files in os.walk(feature_path):
-        dirs[:] = [d for d in dirs if not gitignore.match_file(Path(root) / d)]
-        logger.debug(f"Processing dir: {root}, {len(files)} files")
-        for file in files:
-            if file.endswith((".jsx", ".js")):
-                js_files_total += 1
-                full_path = os.path.join(root, file)
-                rel_path = PathResolver.relative_to_project(full_path)
-                if gitignore.match_file(rel_path) or "particle_cache" in rel_path:
-                    logger.debug(f"Skipping {rel_path} (gitignore or particle_cache)")
-                    continue
-                try:
-                    logger.debug(f"Reading particle for {rel_path}")
-                    particle, error = read_particle(rel_path)
-                    if not error and particle:
-                        file_type = "test" if "__tests__" in rel_path else "file"
-                        particle_data.append(particle)
-                        processed_files.append({
-                            "path": rel_path,
-                            "type": file_type,
-                            "context": particle if file_type != "test" else None
-                        })
-                        logger.debug(f"Added {rel_path} to graph with {len(particle.get('props', []))} props")
-                    else:
-                        logger.warning(f"Skipped {rel_path}: {error or 'No particle data'}")
-                except Exception as e:
-                    logger.error(f"Error reading {full_path}: {str(e)}")
-                    continue
-
     if not processed_files:
         logger.error(f"No Particle data found for {feature_name}. Run addParticle first.")
         return {"error": "No Particle data found. Run addParticle first.", "status": "ERROR"}
@@ -80,16 +101,21 @@ def createGraph(path: str) -> Dict:
     primary_files = [f for f in processed_files if "shared" not in f["path"] and f["type"] != "test"]
     shared_files = [f for f in processed_files if "shared" in f["path"] or f["type"] == "test"]
 
-    # Build tech stack and app story
+    # Compute full tech stack and cache it globally
     try:
         logger.debug("Generating tech stack...")
         tech_stack = get_tech_stack(processed_files)
+        cache_manager.set("tech_stack", tech_stack)
+        
         logger.debug("Aggregating app story...")
-        app_story = aggregate_app_story(particle_data)
+        app_story = aggregate_app_story([f.get("context", {}) for f in processed_files if f.get("context")])
     except Exception as e:
         logger.error(f"Failed to build tech stack or app story: {str(e)}")
         tech_stack = {}
         app_story = {}
+
+    # Count total JS files for coverage calculation
+    js_files_total = count_js_files(feature_path)
 
     # Construct manifest
     manifest = {
@@ -106,9 +132,9 @@ def createGraph(path: str) -> Dict:
         "app_story": app_story
     }
 
-    # Filter empty arrays
+    # Filter empty arrays but preserve tech_stack
     logger.debug("Filtering manifest...")
-    manifest = filter_empty(manifest)
+    manifest = filter_empty(manifest, preserve_tech_stack=True)
 
     # Write to cache
     graph_path = PathResolver.get_graph_path(feature_name)
@@ -129,3 +155,75 @@ def createGraph(path: str) -> Dict:
         
     logger.info(f"Graph created for {feature_name}: {len(processed_files)} files, {manifest['coverage_percentage']}% coverage")
     return manifest
+
+def processFiles(feature_path: str) -> List[Dict]:
+    """
+    Process files in a directory to build a list of files with particle data.
+    
+    Args:
+        feature_path: Path to process, must be an absolute path
+    
+    Returns:
+        List[Dict]: List of processed files with particle data
+    """
+    processed_files = []
+    
+    # Load gitignore
+    gitignore = load_gitignore(feature_path)
+    logger.debug(f"Gitignore loaded for {feature_path}")
+    
+    logger.info(f"Scanning {feature_path} for existing Particle data...")
+    for root, dirs, files in os.walk(feature_path):
+        dirs[:] = [d for d in dirs if not gitignore.match_file(Path(root) / d)]
+        logger.debug(f"Processing dir: {root}, {len(files)} files")
+        for file in files:
+            if file.endswith((".jsx", ".js")):
+                full_path = os.path.join(root, file)
+                rel_path = PathResolver.relative_to_project(full_path)
+                if gitignore.match_file(rel_path) or "particle_cache" in rel_path:
+                    logger.debug(f"Skipping {rel_path} (gitignore or particle_cache)")
+                    continue
+                try:
+                    logger.debug(f"Reading particle for {rel_path}")
+                    particle, error = read_particle(rel_path)
+                    if not error and particle:
+                        file_type = "test" if "__tests__" in rel_path else "file"
+                        processed_files.append({
+                            "path": rel_path,
+                            "type": file_type,
+                            "context": particle if file_type != "test" else None
+                        })
+                        logger.debug(f"Added {rel_path} to graph with {len(particle.get('props', []))} props")
+                    else:
+                        logger.warning(f"Skipped {rel_path}: {error or 'No particle data'}")
+                except Exception as e:
+                    logger.error(f"Error reading {full_path}: {str(e)}")
+                    continue
+    
+    return processed_files
+
+def count_js_files(feature_path: str) -> int:
+    """
+    Count the total number of JavaScript files in a directory.
+    
+    Args:
+        feature_path: Path to count files in, must be an absolute path
+    
+    Returns:
+        int: Total number of JavaScript files
+    """
+    js_files_total = 0
+    
+    # Load gitignore
+    gitignore = load_gitignore(feature_path)
+    
+    for root, dirs, files in os.walk(feature_path):
+        dirs[:] = [d for d in dirs if not gitignore.match_file(Path(root) / d)]
+        for file in files:
+            if file.endswith((".jsx", ".js")):
+                full_path = os.path.join(root, file)
+                rel_path = PathResolver.relative_to_project(full_path)
+                if not gitignore.match_file(rel_path) and "particle_cache" not in rel_path:
+                    js_files_total += 1
+    
+    return js_files_total
