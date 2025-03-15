@@ -4,9 +4,9 @@
 
 ### Core Purpose
 - Extract 95% of the application's narrative directly from the codebase
-Provide maximum context and relevancy for developers
-Optimize token usage efficiency
-Maintain up-to-date graph representation of code relationships
+- Provide maximum context and relevancy for developers
+- Optimize token usage efficiency
+- Maintain up-to-date graph representation of code relationships
 
 ### Core Features
 
@@ -17,30 +17,30 @@ Particle-Graph is a system designed to analyze and generate graph representation
 #### addParticle():
 Focus: File-level metadata.
 - Looks For: 
-  - routes: Routes (not yet).
-  - props: Component props (not yet).
-  - hooks: React hooks (e.g., useState).
-  - calls: API calls (e.g., fetch).
-  - logic: Conditions + actions (e.g., if → console.error).
-  - depends_on: Imports.
-  - jsx: JSX elements (not yet).
-  - comments: TODOs/docs.
+  - routes: Routes definition and usage patterns
+  - props: Component props and their types
+  - hooks: React hooks (e.g., useState, useEffect, useContext)
+  - calls: API calls and function invocations
+  - logic: Conditions + actions (e.g., if → console.error)
+  - depends_on: Import/export relationships
+  - jsx: JSX elements and component usage
+  - comments: Documentation, TODOs, and code annotations
 
-Aggregation type: Granular, per-file.
+Aggregation type: Granular, per-file metadata collection.
 
 #### exportGraph():
 Focus: Aggregated graph—features or codebase.
 - Looks For: 
-  - nodes: Files with Particle data.
-  - edges: Dependency links.
-  - files: File dictionary.
-  - tech_stack: Libraries used.
-  - state_machine: State logic (to add).
-  - dependencies: Dep counts/links.
-  - metadata: Stats (e.g., node_count).
-  - file_count/coverage_percentage (for "all").
+  - nodes: Files with Particle data
+  - edges: Dependency and relationship links
+  - files: Comprehensive file dictionary
+  - tech_stack: Libraries and frameworks used
+  - state_machine: Application state logic
+  - dependencies: Dependency counts and connections
+  - metadata: Statistical information (e.g., node_count, file_count)
+  - coverage_percentage: Analysis coverage metrics
 
-Aggregation type: Big picture, relational.
+Aggregation type: Big picture, relational data structure.
 
 ## Directory Structure
 
@@ -78,10 +78,10 @@ Aggregation type: Big picture, relational.
 │       ├── dependency_tracker.py # Track dependencies between components
 │       ├── file_handler.py      # Handle file operations
 │       ├── particle_generator.py # Generate particle metadata from code
-│       └── particle_support.py  # Support functions for particles
+│       ├── particle_support.py  # Support functions for particles
 │       └── js/                  # JavaScript utilities    
-│         ├── babel_parser_core.js  # Parse JS/JSX files with Babel
-│         └── metadata_extractor.js # Extract metadata from parsed code
+│           ├── babel_parser_core.js  # Parse JS/JSX files with Babel
+│           └── metadata_extractor.js # Extract metadata from parsed code
 │
 ├── doc/                         # Documentation
 ├── dev/                         # Development utilities
@@ -97,11 +97,11 @@ The API layer provides high-level functions for end-users to interact with the P
 | File | Responsibility |
 |------|----------------|
 | `add_particle.py` | Create and attach particle metadata to individual source files |
-| `create_graph.py` | Generate new particle graphs from source files or directories |
+| `create_graph.py` | Generate new particle graphs from source files or directories, with support for single features, multi-feature aggregation, and full codebase analysis |
 | `delete_graph.py` | Remove graphs from the cache and disk |
-| `export_graph.py` | Export graphs to JSON files for external use |
-| `list_graph.py` | List all available graphs in the cache |
-| `load_graph.py` | Load graphs from cache or parse from files |
+| `export_graph.py` | Export graphs to JSON files for external use, with various filtering and formatting options |
+| `list_graph.py` | List all available graphs in the cache with timestamp information |
+| `load_graph.py` | Load graphs from cache or parse from files, with data validation and sanitization |
 | `update_graph.py` | Update existing graphs with new information |
 
 ### Core Layer (`src/core/`)
@@ -110,7 +110,7 @@ The core layer handles the fundamental operations and data transformations.
 
 | File | Responsibility |
 |------|----------------|
-| `cache_manager.py` | Centralized cache management with in-memory/disk storage, thread safety, and automatic persistence |
+| `cache_manager.py` | Centralized cache management with in-memory/disk storage, thread safety, automatic persistence, and comprehensive statistics tracking |
 | `file_processor.py` | Process directories and files, including filtering by extension and handling gitignore rules |
 | `path_resolver.py` | Handle path resolution, normalization, directory management, and translation between host and container paths |
 
@@ -121,8 +121,8 @@ The graph layer handles building and analyzing relationships between components.
 | File | Responsibility |
 |------|----------------|
 | `aggregate_app_story.py` | Aggregate related app components into a coherent story structure |
-| `graph_support.py` | Enhance and process graph structures with dependency linking and reasoning traces |
-| `tech_stack.py` | Analyze code to identify technologies and libraries used |
+| `graph_support.py` | Enhance and process graph structures with dependency linking, reasoning traces, and metadata enrichment |
+| `tech_stack.py` | Analyze code to identify technologies and libraries used, with framework detection and version tracking |
 
 ### Helpers (`src/helpers/`)
 
@@ -130,11 +130,11 @@ Supporting utilities for the overall system.
 
 | File | Responsibility |
 |------|----------------|
-| `config_loader.py` | Load and parse configuration settings |
-| `data_cleaner.py` | Clean and filter data structures including removing empty values |
-| `dir_scanner.py` | Scan directories with pattern matching and filtering |
-| `gitignore_parser.py` | Parse gitignore files for pattern matching |
-| `project_detector.py` | Detect and validate project root directories |
+| `config_loader.py` | Load and parse configuration settings from various sources |
+| `data_cleaner.py` | Clean and filter data structures including removing empty values while preserving critical fields |
+| `dir_scanner.py` | Scan directories with pattern matching, exclusion filters, and performance optimizations |
+| `gitignore_parser.py` | Parse gitignore files for pattern matching and file exclusion |
+| `project_detector.py` | Detect and validate project root directories based on structure markers |
 
 ### Particle Layer (`src/particle/`)
 
@@ -142,10 +142,10 @@ The particle layer manages the creation and handling of code metadata.
 
 | File | Responsibility |
 |------|----------------|
-| `dependency_tracker.py` | Track and analyze dependencies between components |
-| `file_handler.py` | Handle file operations like reading and writing files |
-| `particle_generator.py` | Generate particle metadata by parsing source code |
-| `particle_support.py` | Utilities for particle operations and support functions |
+| `dependency_tracker.py` | Track and analyze dependencies between components with detailed relationship mapping |
+| `file_handler.py` | Handle file operations including reading, writing, and caching particle data |
+| `particle_generator.py` | Generate particle metadata by parsing source code with language-specific processors |
+| `particle_support.py` | Utilities for particle operations, logging, and support functions |
 
 ### JavaScript Utilities (`js/`)
 
@@ -153,7 +153,8 @@ JavaScript tools used by the Python code.
 
 | File | Responsibility |
 |------|----------------|
-| `babel_parser.js` | Parse JavaScript/JSX files using Babel to extract component information |
+| `babel_parser_core.js` | Parse JavaScript/JSX files using Babel to extract component information |
+| `metadata_extractor.js` | Extract metadata from parsed code including imports, exports, hooks, and JSX structure |
 
 ## Key Functions by File
 
@@ -167,23 +168,24 @@ This section provides a list of the main functions defined in each file of the P
 
 #### `create_graph.py`
 - `createGraph(path: str)` - Create a particle graph for a given path
-- `processFiles(files: List[str], prefix: str)` - Process a list of files
+- `processFiles(feature_path: str)` - Process files to build a list of files with particle data
+- `count_js_files(feature_path: str)` - Count total JavaScript files for coverage calculation
 
 #### `delete_graph.py`
 - `deleteGraph(path: str)` - Delete a graph by feature name or path
 
 #### `export_graph.py`
-- `exportGraph(path: str)` - Export a graph to a JSON file
+- `exportGraph(path: str)` - Export a graph to a JSON file with formatting options
 
 #### `list_graph.py`
-- `listGraph()` - List all available graphs with timestamps
+- `listGraph()` - List all available graphs in the cache with timestamps and statistics
 
 #### `load_graph.py`
 - `loadGraph(path: str)` - Load a graph for a specified feature
 - `sanitize_graph(graph: Dict)` - Clean up a graph for presentation
 
 #### `update_graph.py`
-- `updateGraph(path: str)` - Update an existing graph
+- `updateGraph(path: str)` - Update an existing graph with new information
 
 ### Core Layer (`src/core/`)
 
@@ -199,181 +201,155 @@ This section provides a list of the main functions defined in each file of the P
 - `get_stats()` - Get cache statistics
 
 #### `file_processor.py`
-- `process_directory(root_dir: str, rich: bool)` - Process all files in a directory with extension filtering
-- `filter_files_by_extension(files: List[str], extension: str)` - Filter a list of files by extension
-- `is_ignored(path: str, ignore_patterns: List)` - Check if a path matches ignore patterns
+- `process_directory(directory: str, extensions: List[str])` - Process all files in a directory with given extensions
+- `is_excluded(file_path: str, exclusion_patterns: List[str])` - Check if a file should be excluded
+- `read_file_contents(file_path: str)` - Read and decode file contents safely
 
 #### `path_resolver.py`
-- `ensure_dir(directory: Path)` - Ensure a directory exists
-- `translate_host_path(path: str)` - Translate host machine paths to container paths
-- `resolve_path(path: str, base: Path)` - Resolve a path to an absolute path
-- `relative_to_project(path: Union[str, Path])` - Get a path relative to the project root
-- `cache_path(filename: str)` - Get a path in the cache directory
-- `export_path(filename: str)` - Get a path in the export directory
-- `get_particle_path(file_path: Union[str, Path])` - Get the path for a particle file
-- `get_graph_path(feature_name: str)` - Get the path for a graph file
+- `resolve_path(path: str)` - Resolve a path to an absolute path
+- `relative_to_project(path: str)` - Get a path relative to the project root
+- `get_particle_path(file_path: str)` - Get the cache path for a particle file
+- `get_graph_path(feature_name: str)` - Get the cache path for a graph file
+- `read_json_file(file_path: Path)` - Read and parse a JSON file
+- `write_json_file(file_path: Path, data: Any)` - Write data to a JSON file
 
 ### Graph Layer (`src/graph/`)
 
 #### `aggregate_app_story.py`
-- `aggregate_app_story(manifest: Dict)` - Aggregate app components into a story
+- `aggregate_app_story(particles: List[Dict])` - Aggregate particles into a coherent application story
+- `identify_entry_points(particles: List[Dict])` - Identify main entry points of the application
+- `extract_key_flows(particles: List[Dict])` - Extract key user flows from the application
 
 #### `graph_support.py`
-- `postProcessGraph(graph: Union[Dict[str, Any], List, Any])` - Enhance a graph with metadata and dependency information
-- `linkDependencies(graph: Union[Dict[str, Any], List, Any])` - Establish connections between particles based on imports and exports
-- `traceReasoning(graph: Union[Dict[str, Any], List, Any])` - Trace function call chains and data flow within the graph
+- `postProcessGraph(graph: Dict)` - Enhance a graph with metadata and post-processing
+- `linkDependencies(graph: Dict)` - Establish connections between particles based on imports and exports
+- `traceReasoning(graph: Dict)` - Trace function call chains and data flow within the graph
 
 #### `tech_stack.py`
-- `analyze_tech_stack(files: List[str])` - Analyze tech stack from files
-- `detect_frameworks(files: List[str])` - Detect frameworks used in files
-- `detect_libraries(imports: List[str])` - Detect libraries from imports
+- `get_tech_stack(files: List[Dict])` - Analyze files to identify the technology stack
+- `identify_frameworks(imports: List[str])` - Identify frameworks from import statements
+- `classify_dependencies(deps: Dict)` - Classify dependencies by type and importance
 
 ### Helpers (`src/helpers/`)
 
 #### `config_loader.py`
 - `load_config(config_path: str)` - Load configuration from a file
-- `get_config_value(key: str, default: Any)` - Get a configuration value
+- `get_config_value(key: str, default: Any)` - Get a configuration value with fallback
+- `set_config_value(key: str, value: Any)` - Set a configuration value
 
 #### `data_cleaner.py`
-- `filter_empty(obj: Union[Dict, List])` - Recursively remove empty values from data structures
+- `filter_empty(data: Any, preserve_tech_stack: bool)` - Remove empty values from data structures
+- `sanitize_strings(data: Any)` - Clean and normalize string values
 
 #### `dir_scanner.py`
-- `scan_directory(path: str, pattern: str)` - Scan directory contents with a pattern
-- `scan_files(path: str, pattern: str)` - Scan for files matching a pattern
-- `scan_dirs(path: str, pattern: str)` - Scan for directories matching a pattern
+- `scan_directory(directory: str, pattern: str)` - Scan a directory for files matching a pattern
+- `scan_with_exclusion(directory: str, pattern: str, exclusions: List[str])` - Scan with exclusion patterns
 
 #### `gitignore_parser.py`
-- `parse_gitignore(gitignore_path: str)` - Parse a gitignore file into a list of patterns
-- `matches_gitignore(path: str, patterns: List[str])` - Check if a path matches any gitignore patterns
+- `load_gitignore(directory: str)` - Load and parse gitignore rules
+- `match_file(path: str)` - Check if a file matches gitignore patterns
 
 #### `project_detector.py`
-- `detect_project_root(path: str)` - Detect the root directory of a project
-- `is_project_root(path: str)` - Check if a directory is a project root
+- `find_project_root(directory: str)` - Find the root directory of a project
+- `is_project_directory(directory: str)` - Check if a directory is a project root
 
 ### Particle Layer (`src/particle/`)
 
 #### `dependency_tracker.py`
-- `track_dependencies(file_path: str)` - Track dependencies for a file
-- `extract_dependencies(file_path: str)` - Extract dependencies from a file
-- `analyze_imports(content: str)` - Analyze import statements
-- `build_dependency_graph(files: List[str])` - Build a dependency graph
+- `track_dependencies(particle: Dict)` - Track dependencies in a particle
+- `map_dependency_network(particles: List[Dict])` - Create a dependency network map
 
 #### `file_handler.py`
+- `read_particle(file_path: str)` - Read particle data for a file
+- `write_particle(file_path: str, particle: Dict)` - Write particle data to cache
 - `read_file(file_path: str)` - Read a file's contents
-- `write_file(file_path: str, content: str)` - Write content to a file
-- `read_json(file_path: str)` - Read and parse a JSON file
-- `write_json(file_path: str, data: Any)` - Write data to a JSON file
+- `write_file(file_path: str, contents: str)` - Write contents to a file
 
 #### `particle_generator.py`
-- `generate_particles(file_path: str)` - Generate particles from a file
-- `parse_js_file(file_path: str)` - Parse a JavaScript file
-- `extract_components(ast: Dict)` - Extract components from an AST
-- `extract_functions(ast: Dict)` - Extract functions from an AST
+- `generate_particle(file_path: str, file_content: str)` - Generate particle metadata from file content
+- `extract_imports(ast: Dict)` - Extract import statements from AST
+- `extract_hooks(ast: Dict)` - Extract React hooks from AST
+- `extract_jsx(ast: Dict)` - Extract JSX elements from AST
 
 #### `particle_support.py`
-- `get_logger()` - Get a configured logger
-- `init_particle_system()` - Initialize the particle system
-- `get_particle_cache()` - Get the particle cache
+- `setup_logging()` - Configure logging system
+- `clean_particle(particle: Dict)` - Clean up particle data
+- `merge_particles(particles: List[Dict])` - Merge multiple particles
 
-## Data Flows
+## Data Flow Diagram
 
-### AddParticle Data Flow
+The following diagram illustrates the flow of data through the Particle-Graph system:
 
 ```
-┌───────────────────┐     ┌────────────────────┐     ┌────────────────┐
-│                   │     │                    │     │                │
-│  addParticle()    │─────▶ process_directory() ────▶ file_processor  │
-│  (add_particle.py)│     │                    │     │                │
-└───────┬───────────┘     └────────────────────┘     └────────┬───────┘
-        │                                                     │
-        │                                                     ▼
-┌───────▼───────────┐     ┌────────────────────┐     ┌────────────────┐
-│                   │     │                    │     │                │
-│  normalize_path() │◀────┤  load_gitignore()  │◀────┤ filter by ext  │
-│                   │     │                    │     │                │
-└───────┬───────────┘     └────────────────────┘     └────────┬───────┘
-        │                                                     │
-        ▼                                                     ▼
-┌─────────────────────┐   ┌────────────────────┐     ┌────────────────┐
-│                     │   │                    │     │                │
-│  babel_parser.js    │◀──┤ particle_generator │◀────┤ process files  │
-│  (Parse JS/JSX)     │   │                    │     │                │
-└─────────┬───────────┘   └────────────────────┘     └────────────────┘
+┌─────────────────┐   ┌────────────────────┐     ┌────────────────┐
+│                 │   │                    │     │                │
+│  Source Files   │──▶│  particle_generator│────▶│  Particle Data │
+│  (.js, .jsx)    │   │                    │     │                │
+└─────────────────┘   └────────────────────┘     └────────────────┘
+                                                         │
+                                                         ▼
+┌─────────────────┐   ┌────────────────────┐     ┌────────────────┐
+│                 │   │                    │     │                │
+│   Graph API     │◀──│    graph_support   │◀────│  Cache Manager │
+│                 │   │                    │     │                │
+└─────────────────┘   └────────────────────┘     └────────────────┘
           │
           ▼
 ┌─────────────────────┐   ┌────────────────────┐
 │                     │   │                    │
-│  Extract particles  │──▶│  Cache Manager     │
-│  (Components, etc.) │   │  (Store results)   │
+│  Graph JSON Output  │   │   exportGraph()    │
+│                     │◀──│                    │
 └─────────────────────┘   └────────────────────┘
 ```
 
-### Graph Creation, Processing and Export Flow
+## Key Processing Flows
 
-```
-┌───────────────────┐     ┌────────────────────┐     ┌────────────────┐
-│                   │     │                    │     │                │
-│  createGraph()    │─────▶ process_directory() ────▶ filter files    │
-│ (create_graph.py) │     │   (file_utils.py)  │     │                │
-└───────┬───────────┘     └────────────────────┘     └────────┬───────┘
-        │                                                     │
-        │                                                     ▼
-┌───────▼───────────┐     ┌────────────────────┐     ┌────────────────┐
-│                   │     │                    │     │                │
-│ Aggregate story   │◀────┤ Extract particles  │◀────┤ Process files  │
-│                   │     │ per file           │     │                │
-└───────┬───────────┘     └────────────────────┘     └────────────────┘
-        │
-        ▼
-┌─────────────────────┐   ┌────────────────────┐     ┌────────────────┐
-│                     │   │                    │     │                │
-│  Cache the graph    │──▶│   loadGraph()      │────▶│ exportGraph()  │
-│  (Cache Manager)    │   │  (load_graph.py)   │     │(export_graph.py)│
-└─────────────────────┘   └─────────┬──────────┘     └───────┬────────┘
-                                    │                        │
-                                    ▼                        ▼
-                          ┌────────────────────┐     ┌────────────────┐
-                          │                    │     │                │
-                          │  postProcessGraph()│◀────┤ Write to file  │
-                          │ (graph_support.py) │     │                │
-                          └─────────┬──────────┘     └────────────────┘
-                                    │
-                                    ▼
-                          ┌────────────────────┐     ┌────────────────┐
-                          │                    │     │                │
-                          │  linkDependencies()│────▶│traceReasoning()│
-                          │ (graph_support.py) │     │(graph_support) │
-                          └────────────────────┘     └────────────────┘
-```
+### Particle Generation Flow
 
-## Graph Support Functionality
+1. File is read from the filesystem
+2. Content is parsed using appropriate parser (e.g., Babel for JS/JSX)
+3. AST is analyzed for metadata:
+   - Imports and exports
+   - Component definitions
+   - Hook usage
+   - JSX elements
+   - Logic blocks
+4. Metadata is assembled into a "particle"
+5. Particle is cached for future use
 
-The newly added `graph_support.py` module provides enhanced functionality for graph processing:
+### Graph Generation Flow
 
-### Post-Processing Graphs
+1. Target path (feature/directory) identified
+2. Files are scanned and filtered
+3. Each file's particle data is retrieved or generated
+4. Files are categorized (primary, shared, tests)
+5. Technology stack is analyzed
+6. Dependencies are linked between components
+7. App story is aggregated from particles
+8. Reasoning traces are established
+9. Graph metadata is calculated (coverage, counts)
+10. Final graph is cached and returned
 
-The `postProcessGraph()` function enhances graph structures with:
+## Graph Post-Processing
 
-- Additional metadata like file counts and node counts
-- Dependency linkage between components
-- Reasoning traces for function calls and data flow
-- Clean-up of unnecessary information
+The `postProcessGraph()` function enhances raw graph data with:
 
-### Dependency Linking
+1. Additional metadata and statistics
+2. File and node counts
+3. Dependency links between components
+4. Reasoning traces through the codebase
 
-The `linkDependencies()` function analyzes import/export relationships:
+The `linkDependencies()` function establishes connections by:
 
-1. First pass: collects all exports across files
-2. Second pass: links imports to their corresponding exports
-3. Builds a comprehensive dependency graph showing how files and components connect
-
-### Reasoning Tracing
+1. Mapping all exports across the codebase
+2. Connecting imports to their source exports
+3. Creating a dependency network between files
+4. Adding bi-directional relationships to the graph
 
 The `traceReasoning()` function traces call chains and data flow:
 
 1. Collects function definitions from all files
 2. Identifies function calls across the codebase
 3. Establishes caller-callee relationships
-4. Enables tracing code execution paths and understanding component interactions
-
-These graph support features create a richer, more connected representation of the codebase that can be used for analysis, visualization, and AI-assisted exploration.
+4. Maps data transformation paths
+5. Connects state mutations and side effects
