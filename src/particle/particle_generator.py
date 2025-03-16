@@ -22,7 +22,7 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
     logger.info(f"Starting generate particle with file_path: {file_path}")
     if not file_path:
         logger.error("No file_path provided to generate particle")
-        return {"error": "No file_path provided"}
+        return {"error": "No file_path provided", "isError": True}
 
     # Handle paths that might contain the host machine path
     host_prefix = "/Users/Thy/Today/"
@@ -41,18 +41,18 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
     content, error = read_file(relative_path)
     if error:
         logger.error(f"File read failed for {relative_path}: {error}")
-        return {"error": f"Read failed: {error}"}
+        return {"error": f"Read failed: {error}", "isError": True}
 
     try:
         node_path = str(absolute_path)
         # Step 1: Generate AST with babel_parser_core.js
         cmd = ['node', '/app/src/particle/js/babel_parser_core.js', node_path]
         env = os.environ.copy()
-        env['RICH_PARSING'] = '1'  # Always rich now, kept for compatibility
+        env['RICH_PARSING'] = '1'
         ast_result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         if not ast_result.stdout.strip():
             logger.error(f"Empty AST output from Babel for {relative_path}")
-            return {"error": "Babel AST generation produced empty output"}
+            return {"error": "Babel AST generation produced empty output", "isError": True}
         ast_data = json.loads(ast_result.stdout)
         
         # Step 2: Extract metadata with metadata_extractor.js
@@ -67,16 +67,19 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
         )
         if not result.stdout.strip():
             logger.error(f"Empty metadata output from Babel for {relative_path}")
-            return {"error": "Babel metadata extraction produced empty output"}
+            return {"error": "Babel metadata extraction produced empty output", "isError": True}
         
         context = json.loads(result.stdout)
         filtered_context = {k: v for k, v in context.items() if v}  # Filter falsy values
-        export_str, error = write_particle(relative_path, filtered_context)
+        
+        # Write particle to cache as JSON
+        cache_path, error = write_particle(relative_path, filtered_context)
         if error:
-            return {"error": f"Write failed: {error}"}
+            return {"error": f"Write failed: {error}", "isError": True}
 
         # Generate summary
         summary_fields = []
+        attrs = filtered_context.get('attributes', {})
         for field_name, display_name in [
             ('props', 'props'),
             ('hooks', 'hooks'),
@@ -87,13 +90,13 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
             ('routes', 'routes'),
             ('comments', 'comments')
         ]:
-            if field_name in filtered_context:
-                count = len(filtered_context[field_name])
+            if field_name in attrs:
+                count = len(attrs[field_name])
                 if count > 0:
                     summary_fields.append(f"{count} {display_name}")
         
-        if 'state_machine' in filtered_context:
-            states_count = len(filtered_context['state_machine'].get('states', []))
+        if 'state_machine' in attrs:
+            states_count = len(attrs['state_machine'].get('states', []))
             if states_count > 0:
                 summary_fields.append(f"state machine with {states_count} states")
         
@@ -101,18 +104,17 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
         logger.info(f"Generated summary: {summary}")
 
         return {
-            "content": [{"type": "text", "text": export_str}],
-            "summary": summary,
+            "content": [{"type": "text", "text": f"Particle generated for {relative_path}: {summary}"}],
             "status": "OK",
             "isError": False,
-            "note": "Particle applied to file",
+            "note": "Particle cached at " + cache_path,
             "post_action": "read",
-            "context": filtered_context
+            "particle": filtered_context
         }
         
     except subprocess.CalledProcessError as e:
         logger.error(f"Babel failed for {relative_path}: {e.stderr}")
-        return {"error": f"Babel parse failed: {e.stderr}"}
+        return {"error": f"Babel parse failed: {e.stderr}", "isError": True}
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON from Babel for {relative_path}: {e}")
-        return {"error": f"Invalid JSON: {e}"}
+        return {"error": f"Invalid JSON: {e}", "isError": True}
