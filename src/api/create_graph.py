@@ -1,6 +1,7 @@
 import json
 import os
 import zlib
+import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
@@ -11,10 +12,12 @@ from src.graph.aggregate_app_story import aggregate_app_story
 from src.graph.tech_stack import get_tech_stack
 from src.particle.particle_support import logger
 from src.helpers.data_cleaner import filter_empty
-from src.particle.file_handler import read_particle
+from src.particle.file_handler import read_particle, read_file, write_particle
 from src.core.path_resolver import PathResolver
 from src.core.cache_manager import cache_manager
 from src.helpers.gitignore_parser import load_gitignore
+from src.helpers.dir_scanner import scan_directory
+from src.particle.particle_generator import generate_particle
 
 # Tokenizer setup
 tokenizer = tiktoken.get_encoding("cl100k_base")
@@ -222,6 +225,7 @@ def createGraph(path: str) -> Dict:
 def processFiles(feature_path: str) -> List[Dict]:
     """
     Process files in a directory to build a list of files with particle data.
+    Check for stale/missing particles using file hashes and regenerate if needed.
     
     Args:
         feature_path: Path to process, must be an absolute path
@@ -246,21 +250,58 @@ def processFiles(feature_path: str) -> List[Dict]:
                 if gitignore.match_file(rel_path) or "particle_cache" in rel_path:
                     logger.debug(f"Skipping {rel_path} (gitignore or particle_cache)")
                     continue
+                
                 try:
-                    logger.debug(f"Reading particle for {rel_path}")
-                    particle, error = read_particle(rel_path)
-                    if not error and particle:
-                        file_type = "test" if "__tests__" in rel_path else "file"
-                        processed_files.append({
-                            "path": rel_path,
-                            "type": file_type,
-                            "context": particle if file_type != "test" else None
-                        })
-                        logger.debug(f"Added {rel_path} to graph with {len(particle.get('props', []))} props")
+                    # Compute current file hash for freshness checks
+                    content, read_error = read_file(rel_path)
+                    if read_error:
+                        logger.error(f"Error reading file content for {rel_path}: {read_error}")
+                        continue
+                    
+                    current_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
+                    logger.debug(f"Current hash for {rel_path}: {current_hash}")
+                    
+                    # Try to read cached particle
+                    particle, particle_error = read_particle(rel_path)
+                    is_stale = True  # Assume stale by default
+                    
+                    if not particle_error and particle:
+                        # Check if particle has file_hash and compare with current hash
+                        if 'file_hash' in particle and particle['file_hash'] == current_hash:
+                            is_stale = False
+                            logger.debug(f"Particle for {rel_path} is fresh (hash match)")
+                        else:
+                            logger.info(f"Particle for {rel_path} is stale (hash mismatch or missing hash)")
                     else:
-                        logger.warning(f"Skipped {rel_path}: {error or 'No particle data'}")
+                        logger.info(f"No cached particle for {rel_path} or read error: {particle_error}")
+                    
+                    # Regenerate particle if stale or missing
+                    if is_stale:
+                        logger.info(f"Regenerating particle for {rel_path}")
+                        result = generate_particle(rel_path)
+                        if result.get("isError"):
+                            logger.error(f"Failed to generate particle for {rel_path}: {result.get('error')}")
+                            continue
+                        
+                        # Get the freshly generated particle
+                        particle = result.get("particle")
+                        if not particle:
+                            logger.error(f"Generated particle for {rel_path} is empty")
+                            continue
+                            
+                        logger.info(f"Successfully regenerated particle for {rel_path}")
+                    
+                    # Add particle to processed files
+                    file_type = "test" if "__tests__" in rel_path else "file"
+                    processed_files.append({
+                        "path": rel_path,
+                        "type": file_type,
+                        "context": particle if file_type != "test" else None
+                    })
+                    logger.debug(f"Added {rel_path} to graph with {len(particle.get('attributes', {}).get('props', []))} props")
+                    
                 except Exception as e:
-                    logger.error(f"Error reading {full_path}: {str(e)}")
+                    logger.error(f"Error processing {full_path}: {str(e)}")
                     continue
     
     return processed_files

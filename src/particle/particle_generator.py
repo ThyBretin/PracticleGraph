@@ -1,6 +1,7 @@
 import subprocess
 import json
 import os
+import hashlib
 from pathlib import Path
 
 from src.particle.file_handler import read_file, write_particle
@@ -43,6 +44,10 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
         logger.error(f"File read failed for {relative_path}: {error}")
         return {"error": f"Read failed: {error}", "isError": True}
 
+    # Generate file hash for freshness checking
+    file_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
+    logger.debug(f"Generated MD5 hash for {relative_path}: {file_hash}")
+
     try:
         node_path = str(absolute_path)
         # Step 1: Generate AST with babel_parser_core.js
@@ -71,6 +76,9 @@ def generate_particle(file_path: str = None, rich: bool = True) -> dict:
         
         context = json.loads(result.stdout)
         filtered_context = {k: v for k, v in context.items() if v}  # Filter falsy values
+        
+        # Add file hash to the particle metadata for freshness checking
+        filtered_context['file_hash'] = file_hash
         
         # Write particle to cache as JSON
         cache_path, error = write_particle(relative_path, filtered_context)
