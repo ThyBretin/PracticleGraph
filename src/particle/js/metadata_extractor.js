@@ -17,6 +17,8 @@ function extractMetadata(ast, code, filePath, rich = false) {
     routes: [],
     comments: [],
     used_by: [],
+    core_rules: [], // Highlight app-defining rules
+    references: { hooks: {}, calls: {}, routes: {} } // Map to files/lines for AI/devs
   };
 
   // Comments (unchanged)
@@ -37,6 +39,7 @@ function extractMetadata(ast, code, filePath, rich = false) {
   function walk(node) {
     if (!node) return;
 
+    // Imports
     if (node.type === 'ImportDeclaration') {
       const source = node.source.value;
       const specifiers = node.specifiers
@@ -48,15 +51,27 @@ function extractMetadata(ast, code, filePath, rich = false) {
       console.error(`Found import: ${source}`);
     }
 
+    // Hooks and Calls
     if (node.type === 'CallExpression') {
       const callee =
         node.callee.name ||
         (node.callee.property && `${node.callee.object?.name}.${node.callee.property.name}`);
       if (callee?.startsWith('use')) {
-        particle.hooks.push({ name: callee });
+        particle.hooks.push(callee);
+        particle.references.hooks[callee] = { line: node.loc.start.line };
       }
-      if (callee === 'fetch' || ['axios', 'supabase'].includes(node.callee.object?.name)) {
-        particle.calls.push({ name: callee });
+      if (callee === 'fetch' || ['axios', 'supabase'].includes(node.callee.object?.name) || callee?.includes('router')) {
+        particle.calls.push(callee);
+        particle.references.calls[callee] = { line: node.loc.start.line };
+      }
+    }
+
+    // Routes from router.push/replace
+    if (node.type === 'ExpressionStatement' && node.expression?.callee?.property?.name === 'replace') {
+      const route = node.expression.arguments[0]?.value;
+      if (route) {
+        particle.routes.push(route);
+        particle.references.routes[route] = { line: node.loc.start.line };
       }
     }
 
@@ -67,16 +82,14 @@ function extractMetadata(ast, code, filePath, rich = false) {
     if (!node) return;
 
     if (node.type === 'IfStatement' && node.test) {
+      // Extract condition
       let condition = '';
       if (node.test.type === 'Identifier') {
         condition = node.test.name;
       } else if (node.test.type === 'UnaryExpression' && node.test.operator === '!') {
-        if (
-          node.test.argument?.type === 'CallExpression' &&
-          node.test.argument.callee?.property?.name === 'includes'
-        ) {
+        if (node.test.argument?.type === 'CallExpression' && node.test.argument.callee?.property?.name === 'includes') {
           const arg = node.test.argument.arguments[0];
-          condition = arg?.name || arg?.value || 'check';
+          condition = `!${arg?.name || arg?.value || 'check'}.includes`;
         }
       } else if (node.test.type === 'BinaryExpression') {
         condition = `${node.test.left?.name || node.test.left?.value || ''} ${node.test.operator} ${node.test.right?.name || node.test.right?.value || ''}`;
@@ -85,6 +98,7 @@ function extractMetadata(ast, code, filePath, rich = false) {
       }
 
       if (condition) {
+        // Extract action
         let action = 'handles condition';
         if (node.consequent.type === 'BlockStatement') {
           node.consequent.body.forEach((stmt) => {
@@ -94,13 +108,31 @@ function extractMetadata(ast, code, filePath, rich = false) {
                 (stmt.expression.callee?.property?.name &&
                   `${stmt.expression.callee.object?.name}.${stmt.expression.callee.property.name}`);
               if (callee === 'console.error') {
-                action = 'calls console.error';
+                action = 'logs error';
+              } else if (callee?.includes('router')) {
+                action = `redirects to ${stmt.expression.arguments[0]?.value || 'route'}`;
+              } else if (callee) {
+                action = `calls ${callee}`;
               }
+            } else if (stmt.type === 'VariableDeclaration') {
+              action = 'sets variable';
             }
           });
         }
-        particle.logic.push({ condition, action });
-        console.error(`Found logic: ${condition} -> ${action}`);
+
+        const logicEntry = { condition, action, line: node.loc.start.line };
+        particle.logic.push(logicEntry);
+
+        // Tag core rules (e.g., capacity, stage, auth, routing)
+        if (
+          condition.includes('capacity') || 
+          action.includes('stage') || 
+          action.includes('redirect') || 
+          condition.includes('role') || 
+          condition.includes('isAuthenticated')
+        ) {
+          particle.core_rules.push(logicEntry);
+        }
       }
     }
 
@@ -117,7 +149,7 @@ function extractMetadata(ast, code, filePath, rich = false) {
       const cleanedCode = existingMatch[0].replace('export const Particle =', '').trim().replace(/;$/, '');
       const existing = eval(`(${cleanedCode})`);
       particle.purpose = existing.purpose || particle.purpose;
-      ['props', 'hooks', 'calls', 'logic', 'depends_on', 'jsx', 'routes', 'comments'].forEach((field) => {
+      ['props', 'hooks', 'calls', 'logic', 'depends_on', 'jsx', 'routes', 'comments', 'core_rules'].forEach((field) => {
         if (existing[field]) {
           if (typeof existing[field][0] !== 'object') {
             particle[field] = [...new Set([...(existing[field] || []), ...particle[field]])];
@@ -162,7 +194,6 @@ if (require.main === module) {
         const code = fs.readFileSync(absolutePath, 'utf-8');
         const rich = process.env.RICH_PARSING === '1';
         const particle = extractMetadata(ast, code, filePath, rich);
-        // Single-line JSON output
         console.log(JSON.stringify(particle));
       } catch (error) {
         console.error(`Error processing ${filePath}: ${error.message}`);
