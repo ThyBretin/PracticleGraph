@@ -12,7 +12,7 @@ COPY server.py ./
 COPY src/api/add_particle.py src/api/create_graph.py src/api/list_graph.py src/api/export_graph.py src/api/particle_this.py src/api/
 
 # Copy core files
-COPY src/core/path_resolver.py src/core/cache_manager.py src/core/file_processor.py src/core/
+COPY src/core/path_resolver.py src/core/cache_manager.py src/core/file_processor.py src/core/chat_handler.py src/core/
 
 # Copy particle files
 COPY src/particle/particle_support.py src/particle/file_handler.py src/particle/dependency_tracker.py src/particle/particle_generator.py src/particle/

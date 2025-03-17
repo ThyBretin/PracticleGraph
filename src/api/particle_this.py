@@ -1,18 +1,23 @@
 from src.particle.particle_generator import generate_particle
 from src.core.path_resolver import PathResolver
+from src.core.chat_handler import chat_handler
 from src.particle.particle_support import logger
 
-def particleThis(target: str):
-    """Process a target and return particle data for chat refinement."""
-    logger.info(f"ParticleThis called with target: {target}")
+def particleThis(target: str, active_file: str = None):
+    logger.info(f"ParticleThis called with target: {target}, active_file: {active_file}")
+    
+    if active_file and not target.startswith('/project') and target in active_file:
+        target = active_file
+    if target.startswith('/Users/Thy/Today/'):
+        target = target[len('/Users/Thy/Today/'):]
     
     resolved_path = PathResolver.resolve_path(target)
     result = {}
 
-    if resolved_path.exists():  # File mode
+    if resolved_path.exists():
         particle_data = generate_particle(target, rich=True)
         if particle_data.get("isError"):
-            return {"content": [{"type": "text", "text": particle_data["error"]}], "isError": True}
+            return {"type": "text", "text": particle_data["error"], "isError": True}
         
         particle = particle_data["particle"]
         attrs = particle.get("attributes", {})
@@ -40,20 +45,15 @@ def particleThis(target: str):
                 summary.append(f"{label}: {', '.join(str(v) for v in values[:5])}")
         
         result[target] = summary or ["No significant elements"]
-        chat_output = f"I’ve analyzed {target} and found:\n" + "\n".join(summary) if summary else f"{target} has no key elements."
-    else:  # Function mode placeholder
-        chat_output = f"Assuming '{target}' is a function—scanning all files not implemented yet."
+        return chat_handler.initiate_chat(target, result)
+    else:
+        chat_output = f"Couldn’t find '{target}' as a file—assuming it’s a function? Scanning all files not implemented yet."
         result[target] = ["Function mode TBD"]
+        return {"type": "text", "text": chat_output, "isError": False, "particle_data": result}
 
-    return {
-        "content": [{"type": "text", "text": chat_output}],
-        "isError": False,
-        "particle_data": result
-    }
-
-# MCP JSON-RPC handler
 def handle_particle_this(params):
     target = params.get("target", "")
+    active_file = params.get("active_file", None)
     if not target:
-        return {"content": [{"type": "text", "text": "No target provided"}], "isError": True}
-    return particleThis(target)
+        return {"type": "text", "text": "No target provided", "isError": True}
+    return particleThis(target, active_file)
