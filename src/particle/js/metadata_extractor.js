@@ -23,6 +23,9 @@ function extractMetadata(filePath, rich = false) {
       sourceType: 'module',
       plugins: ['jsx', 'flow'],
       errorRecovery: true,
+      sourceFilename: filePath,
+      // Enable comments
+      attachComment: true,
     });
   } catch (e) {
     process.stderr.write(`Babel parse failed for ${filePath}: ${e.message}\n`);
@@ -41,6 +44,8 @@ function extractMetadata(filePath, rich = false) {
     core_rules: [],
     variables: {},
     functions: {},
+    props: {},  // New: Store function parameters
+    comments: [],  // New: Store comments
     references: { hooks: {}, calls: {}, routes: {} },
     business_rules: [],
     flows: [],
@@ -82,6 +87,16 @@ function extractMetadata(filePath, rich = false) {
         const line = node.loc?.start?.line || 0;
         particle.functions[name] = particle.functions[name] || [];
         particle.functions[name].push(line);
+        // Extract props from params
+        node.params.forEach(param => {
+          if (param.type === 'ObjectPattern') {
+            param.properties.forEach(prop => {
+              const propName = prop.value.name;
+              particle.props[propName] = particle.props[propName] || [];
+              particle.props[propName].push(line);
+            });
+          }
+        });
       }
     },
 
@@ -150,7 +165,9 @@ function extractMetadata(filePath, rich = false) {
 
         if (condition) {
           let action = 'handles condition';
-          if (node.consequent.type === 'BlockStatement') {
+          if (node.consequent.type === 'ReturnStatement') {
+            action = 'returns early';
+          } else if (node.consequent.type === 'BlockStatement') {
             node.consequent.body.forEach(stmt => {
               if (stmt.type === 'ExpressionStatement' && stmt.expression?.type === 'CallExpression') {
                 const callee = stmt.expression.callee?.name || 
@@ -163,11 +180,21 @@ function extractMetadata(filePath, rich = false) {
           }
 
           const logicEntry = { condition, action, line: node.loc?.start?.line || 0 };
-          particle.logic.push(logicEntry);
+          particle.logic.push(logicEntry);  // Always add logic
           if (rich && isCoreRule(logicEntry, particle)) {
             particle.core_rules.push(logicEntry);
           }
         }
+      }
+    },
+
+    // New: Extract comments
+    enter({ node }) {
+      if (node.leadingComments) {
+        node.leadingComments.forEach(comment => {
+          const line = comment.loc?.start?.line || 0;
+          particle.comments.push({ text: comment.value.trim(), line });
+        });
       }
     },
   });
@@ -198,6 +225,9 @@ function extractMetadata(filePath, rich = false) {
       calls: Object.entries(particle.calls).map(([name, lines]) => ({ name, lines: [...new Set(lines)] })),
       variables: Object.entries(particle.variables).map(([name, lines]) => ({ name, lines: [...new Set(lines)] })),
       functions: Object.entries(particle.functions).map(([name, lines]) => ({ name, lines: [...new Set(lines)] })),
+      props: Object.entries(particle.props).map(([name, lines]) => ({ name, lines: [...new Set(lines)] })),
+      logic: particle.logic,
+      comments: particle.comments,
       core_rules: particle.core_rules,
       depends_on: Object.entries(particle.depends_on).map(([source, specifiers]) => `${source} (${[...new Set(specifiers)].join(', ')})`),
       ...(rich && {

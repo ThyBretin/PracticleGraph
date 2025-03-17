@@ -9,7 +9,7 @@ RUN mkdir -p src/api src/core src/graph src/helpers src/particle/js
 COPY server.py ./
 
 # Copy API files
-COPY src/api/add_particle.py src/api/create_graph.py src/api/list_graph.py src/api/export_graph.py src/api/
+COPY src/api/add_particle.py src/api/create_graph.py src/api/list_graph.py src/api/export_graph.py src/api/particle_this.py src/api/
 
 # Copy core files
 COPY src/core/path_resolver.py src/core/cache_manager.py src/core/file_processor.py src/core/
