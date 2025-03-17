@@ -5,7 +5,7 @@
 ### Core Purpose
 - Extract 95% of the application's narrative directly from the codebase
 - Provide maximum context and relevancy for developers
-- Optimize token usage efficiency
+- Optimize token usage efficiency for ai assistance
 - Maintain up-to-date graph representation of code relationships
 
 ### Core Features
@@ -27,6 +27,16 @@ Focus: File-level metadata.
   - comments: Documentation, TODOs, and code annotations
 
 Aggregation type: Granular, per-file metadata collection.
+
+#### createGraph():
+Focus: Build comprehensive graph from source files and cached particles.
+- Key Features:
+  - Hash-based freshness checking: Computes MD5 hashes of source files
+  - Automatic particle regeneration: Detects stale/missing particles and regenerates on-demand
+  - Smart caching: Only regenerates particles when source code has changed
+  - File relationship mapping: Constructs graph nodes and edges from particles
+
+Aggregation type: Directory or feature-level aggregation with automatic particle management.
 
 #### exportGraph():
 Focus: Aggregated graph—features or codebase.
@@ -220,13 +230,9 @@ The API layer provides high-level functions for end-users to interact with the P
 
 | File | Responsibility |
 |------|----------------|
-| `add_particle.py` | Create and attach particle metadata to individual source files |
 | `create_graph.py` | Generate new particle graphs from source files or directories, with support for single features, multi-feature aggregation, and full codebase analysis |
-| `delete_graph.py` | Remove graphs from the cache and disk |
+| `list_graph.py` | List all available graphs in the cache with timestamps and statistics |
 | `export_graph.py` | Export graphs to JSON files for external use, with various filtering and formatting options |
-| `list_graph.py` | List all available graphs in the cache with timestamp information |
-| `load_graph.py` | Load graphs from cache or parse from files, with data validation and sanitization |
-| `update_graph.py` | Update existing graphs with new information |
 
 ### Core Layer (`src/core/`)
 
@@ -267,8 +273,8 @@ The particle layer manages the creation and handling of code metadata.
 | File | Responsibility |
 |------|----------------|
 | `dependency_tracker.py` | Track and analyze dependencies between components with detailed relationship mapping |
-| `file_handler.py` | Handle file operations including reading, writing, and caching particle data |
-| `particle_generator.py` | Generate particle metadata by parsing source code with language-specific processors |
+| `file_handler.py` | Handle file operations including reading, writing, and caching particle data with support for hash-based metadata |
+| `particle_generator.py` | Generate particle metadata by parsing source code with language-specific processors and file content hashing for freshness detection |
 | `particle_support.py` | Utilities for particle operations, logging, and support functions |
 
 ### JavaScript Utilities (`js/`)
@@ -292,7 +298,7 @@ This section provides a list of the main functions defined in each file of the P
 
 #### `create_graph.py`
 - `createGraph(path: str)` - Create a particle graph for a given path
-- `processFiles(feature_path: str)` - Process files to build a list of files with particle data
+- `processFiles(feature_path: str)` - Process files to build a list of files with particle data, checking for stale/missing particles using file hashes and regenerating them as needed
 - `count_js_files(feature_path: str)` - Count total JavaScript files for coverage calculation
 
 #### `delete_graph.py`
@@ -385,20 +391,70 @@ This section provides a list of the main functions defined in each file of the P
 
 #### `file_handler.py`
 - `read_particle(file_path: str)` - Read particle data for a file
-- `write_particle(file_path: str, particle: Dict)` - Write particle data to cache
-- `read_file(file_path: str)` - Read a file's contents
-- `write_file(file_path: str, contents: str)` - Write contents to a file
+- `write_particle(file_path: str, particle: Dict)` - Write particle data (including file hash) to cache
+- `read_file(file_path: str)` - Read a file's contents for parsing and hash generation
+- `write_file(file_path: str, contents: str)` - Write content to a file
 
 #### `particle_generator.py`
-- `generate_particle(file_path: str, file_content: str)` - Generate particle metadata from file content
-- `extract_imports(ast: Dict)` - Extract import statements from AST
-- `extract_hooks(ast: Dict)` - Extract React hooks from AST
-- `extract_jsx(ast: Dict)` - Extract JSX elements from AST
+- `generate_particle(file_path: str, rich: bool)` - Generate particle metadata from source code including MD5 hash of file content for freshness checking
+- `parse_jsx(file_content: str)` - Parse JSX/JavaScript content to extract metadata
+- `extract_imports(ast: Dict)` - Extract import statements and dependencies
+- `extract_exports(ast: Dict)` - Extract exported functions and components
+- `extract_props(ast: Dict)` - Extract component props and types
 
 #### `particle_support.py`
 - `setup_logging()` - Configure logging system
 - `clean_particle(particle: Dict)` - Clean up particle data
 - `merge_particles(particles: List[Dict])` - Merge multiple particles
+
+## System Components
+
+### Core Components
+
+#### Hash-Based Freshness Mechanism
+
+The hash-based freshness checking system ensures graph data remains current with minimal processing overhead:
+
+1. **Hash Generation**:
+   - When a particle is generated, an MD5 hash of the source file content is computed
+   - The hash is stored in the particle metadata as `file_hash`
+
+2. **Freshness Checks**:
+   - During graph creation, each source file's current hash is compared with its stored hash
+   - Particles are classified as fresh (hash match) or stale (hash mismatch or missing hash)
+
+3. **Smart Regeneration**:
+   - Only stale or missing particles are regenerated, improving performance
+   - Fresh particles are reused without re-processing
+
+4. **Benefits**:
+   - Eliminates redundant processing of unchanged files
+   - Ensures graph representation accurately reflects current codebase
+   - Enables seamless integration of `createGraph()` and particle generation
+   - Maintains automatic currency without manual intervention
+
+This system allows developers to focus on `createGraph()` and `exportGraph()` as the primary APIs, with particle management handled transparently behind the scenes.
+
+## Key Processing Flows
+
+### Automatic Particle Generation and Freshness Checking
+
+1. **Entry Point**: `createGraph(path)` is called to generate a graph for a specific feature or directory
+2. **Path Resolution**: The path is resolved to the appropriate directory in the local or Docker environment
+3. **Directory Scanning**: The directory is scanned for JS/JSX files that need processing
+4. **For Each File**:
+   - The file content is read and an MD5 hash is computed
+   - If a cached particle exists, its stored hash is compared with the current hash
+   - If the hashes match, the cached particle is used (fresh)
+   - If the hashes don't match or no hash exists, the particle is regenerated (stale)
+5. **Particle Regeneration**: For stale files, the content is parsed with Babel and metadata is extracted
+6. **Hash Storage**: The new hash is stored in the particle metadata
+7. **Graph Construction**: All particles (fresh and regenerated) are assembled into a graph structure
+8. **Post-Processing**: The graph is enhanced with dependency links, tech stack analysis, and other metadata
+9. **Caching**: The final graph is cached for future use
+10. **Result**: Returns a complete graph representation with all particles up-to-date
+
+This flow ensures that only changed files are reprocessed, improving performance while maintaining accuracy.
 
 ## Data Flow Diagram
 
@@ -424,56 +480,3 @@ The following diagram illustrates the flow of data through the Particle-Graph sy
 │  Graph JSON Output  │   │   exportGraph()    │
 │                     │◀──│                    │
 └─────────────────────┘   └────────────────────┘
-```
-
-## Key Processing Flows
-
-### Particle Generation Flow
-
-1. File is read from the filesystem
-2. Content is parsed using appropriate parser (e.g., Babel for JS/JSX)
-3. AST is analyzed for metadata:
-   - Imports and exports
-   - Component definitions
-   - Hook usage
-   - JSX elements
-   - Logic blocks
-4. Metadata is assembled into a "particle"
-5. Particle is cached for future use
-
-### Graph Generation Flow
-
-1. Target path (feature/directory) identified
-2. Files are scanned and filtered
-3. Each file's particle data is retrieved or generated
-4. Files are categorized (primary, shared, tests)
-5. Technology stack is analyzed
-6. Dependencies are linked between components
-7. App story is aggregated from particles
-8. Reasoning traces are established
-9. Graph metadata is calculated (coverage, counts)
-10. Final graph is cached and returned
-
-## Graph Post-Processing
-
-The `postProcessGraph()` function enhances raw graph data with:
-
-1. Additional metadata and statistics
-2. File and node counts
-3. Dependency links between components
-4. Reasoning traces through the codebase
-
-The `linkDependencies()` function establishes connections by:
-
-1. Mapping all exports across the codebase
-2. Connecting imports to their source exports
-3. Creating a dependency network between files
-4. Adding bi-directional relationships to the graph
-
-The `traceReasoning()` function traces call chains and data flow:
-
-1. Collects function definitions from all files
-2. Identifies function calls across the codebase
-3. Establishes caller-callee relationships
-4. Maps data transformation paths
-5. Connects state mutations and side effects

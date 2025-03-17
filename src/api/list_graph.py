@@ -1,72 +1,61 @@
 from src.particle.particle_support import logger
-from src.core.cache_manager import cache_manager
 from src.core.path_resolver import PathResolver
+from src.helpers.dir_scanner import scan_directory
 
 def listGraph() -> dict:
     """
-    List all cached Particle Graphs with their last crawled timestamp.
-    Returns a dictionary of feature names to their last crawled timestamp.
+    List all cached Particle Graphs from the file system with metadata.
+    Returns a JSON-RPC response with graph details.
     """
-    # Log cache directory location for debugging
-    logger.info(f"Looking for cached graphs in: {PathResolver.CACHE_DIR}")
+    # Use CACHE_DIR directly from PathResolver
+    cache_dir = PathResolver.CACHE_DIR
+    logger.info(f"Scanning cached graphs in: {cache_dir}")
     
-    # Get all cache keys
-    keys = cache_manager.keys()
-    logger.info(f"Found {len(keys)} potential graph keys: {keys}")
-    
-    if not keys:
-        logger.info("No Particle Graph cached yet")
+    # Scan for *.graph.json files (adjust pattern if needed)
+    graph_files = scan_directory(str(cache_dir), "*.graph.json")
+    if not graph_files:
+        logger.info("No cached graphs found")
         return {
-            "content": [{"type": "text", "text": "No Particle Graph available"}],
+            "content": [{"type": "text", "text": "No cached Particle Graphs available"}],
+            "status": "OK",
             "isError": False
         }
-        
-    result = {}
-    for key in keys:
-        try:
-            # Skip internal keys and tech_stack
-            if key.startswith("__") and key != "__codebase__":
-                continue
-            if key == "tech_stack":
-                continue
-                
-            graph, found = cache_manager.get(key)
-            
-            if found and isinstance(graph, dict):
-                # If graph is a dictionary and has last_crawled field
-                if "last_crawled" in graph:
-                    result[key] = graph["last_crawled"]
-                else:
-                    # Use creation timestamp if available, otherwise "unknown"
-                    result[key] = graph.get("created_at", "unknown")
-            elif found:
-                # Graph was found but is not a dictionary
-                logger.warning(f"Graph for key '{key}' is not a dictionary: {type(graph)}")
-                result[key] = "invalid format"
-            else:
-                # Graph was not found
-                logger.warning(f"Failed to retrieve graph for key: {key}")
-        except Exception as e:
-            # Catch any exceptions to prevent function failure
-            logger.error(f"Error processing graph key '{key}': {str(e)}")
-            result[key] = f"error: {str(e)}"
     
-    if not result:
-        logger.warning("No valid graphs found in cache")
+    graphs = []
+    for graph_file in graph_files:
+        try:
+            graph_data, error = PathResolver.read_json_file(str(graph_file))
+            if error:
+                logger.error(f"Failed to read {graph_file}: {error}")
+                continue
+            key = graph_file.stem  # e.g., hub_events
+            graphs.append({
+                "name": key,
+                "last_crawled": graph_data.get("last_crawled", "unknown"),
+                "file_count": graph_data.get("file_count", 0),
+                "token_count": graph_data.get("token_count", 0),
+                "features": graph_data.get("features", [key]) if graph_data.get("aggregate") else [key]
+            })
+        except Exception as e:
+            logger.error(f"Error reading graph {graph_file}: {str(e)}")
+            continue
+    
+    if not graphs:
+        logger.warning("No valid graphs found")
         return {
             "content": [{"type": "text", "text": "No valid Particle Graphs available"}],
+            "status": "OK",
             "isError": False
         }
-        
-    # Format the result for MCP client
-    formatted_list = []
-    for graph_name, timestamp in sorted(result.items()):
-        formatted_list.append(f"• {graph_name}: {timestamp}")
     
+    formatted_list = [f"• {g['name']} (Files: {g['file_count']}, Tokens: {g['token_count']}): {g['last_crawled']}" 
+                     for g in sorted(graphs, key=lambda x: x["name"])]
     formatted_text = "Available Particle Graphs:\n\n" + "\n".join(formatted_list)
     
-    logger.info(f"Successfully listed {len(result)} graphs")
+    logger.info(f"Listed {len(graphs)} graphs")
     return {
         "content": [{"type": "text", "text": formatted_text}],
-        "isError": False
+        "status": "OK",
+        "isError": False,
+        "graphs": graphs
     }

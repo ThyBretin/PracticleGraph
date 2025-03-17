@@ -41,12 +41,10 @@ def createGraph(path: str) -> Dict:
         features = [feat.strip() for feat in path.split(",")]
         logger.info(f"Creating multi-feature graph for: {features}")
         
-        # Process each feature path to build a list of processed files
         processed_files = []
         feature_names = []
         
         for feature_path in features:
-            # Skip "all" and "codebase" in multi-feature as they are handled separately
             if feature_path.lower() in ("all", "codebase"):
                 logger.warning(f"Skipping '{feature_path}' in multi-feature request - use it alone instead")
                 continue
@@ -54,40 +52,50 @@ def createGraph(path: str) -> Dict:
             feature_name = feature_path.split("/")[-1].lower() if "/" in feature_path else feature_path.lower()
             feature_names.append(feature_name)
             
-            # Improve path resolution for specific features
             try:
-                # First try a direct path within PROJECT_ROOT
+                # Resolve path
                 resolved_path = str(PathResolver.resolve_path(feature_path))
+                logger.debug(f"Initial resolved path for {feature_path}: {resolved_path}")
                 
-                # If path appears incorrect (doesn't exist), try in thy/today/ directory
+                # Fallback paths if initial resolution fails
                 if not os.path.exists(resolved_path) and os.path.exists("/project"):
                     potential_paths = [
-                        str(PathResolver.resolve_path(f"thy/today/{feature_path}")), 
+                        str(PathResolver.resolve_path(f"thy/today/{feature_path}")),
                         str(PathResolver.resolve_path(f"/project/thy/today/{feature_path}"))
                     ]
-                    
                     for potential_path in potential_paths:
                         if os.path.exists(potential_path):
-                            logger.info(f"Found feature at alternate path: {potential_path}")
                             resolved_path = potential_path
+                            logger.info(f"Adjusted to alternate path: {resolved_path}")
                             break
                 
-                logger.debug(f"Resolved path for {feature_path}: {resolved_path}")
+                if not os.path.exists(resolved_path):
+                    logger.error(f"Resolved path does not exist: {resolved_path} for {feature_path}")
+                    continue
+                
+                # Process files
                 feature_files = processFiles(resolved_path)
+                logger.info(f"Found {len(feature_files)} files for {feature_path} at {resolved_path}")
+                if not feature_files:
+                    logger.warning(f"No files processed for {feature_path} - path may be empty or invalid")
                 processed_files.extend(feature_files)
             except Exception as e:
-                logger.error(f"Error resolving path for {feature_path}: {str(e)}")
+                logger.error(f"Error processing {feature_path}: {str(e)}")
                 continue
-            
+        
         if not feature_names:
             logger.error("No valid features found in multi-feature request")
             return {"error": "No valid features found in multi-feature request", "status": "ERROR"}
-            
-        # Compute full tech stack and cache it globally
+        
+        if not processed_files:
+            logger.error("No files processed for any features")
+            return {"error": "No files found for any features", "status": "ERROR"}
+        
+        # Compute tech stack
         tech_stack = get_tech_stack(processed_files)
         cache_manager.set("tech_stack", tech_stack)
         
-        # Prepare the aggregate manifest
+        # Build aggregate manifest
         aggregate_manifest = {
             "aggregate": True,
             "features": feature_names,
@@ -97,22 +105,41 @@ def createGraph(path: str) -> Dict:
             "file_count": len(processed_files),
         }
         
-        # Add files from each feature to the aggregate manifest
+        # Populate files directly from processed_files instead of relying solely on cache
         for feature_name in feature_names:
+            # Try cached graph first
             feature_graph, found = cache_manager.get(feature_name)
-            if found:
-                aggregate_manifest["files"][feature_name] = feature_graph.get("files", {})
+            if found and isinstance(feature_graph, dict) and feature_graph.get("files"):
+                aggregate_manifest["files"][feature_name] = feature_graph["files"]
+                logger.debug(f"Loaded {len(feature_graph['files'])} files from cache for {feature_name}")
+            else:
+                # Fallback to processed files
+                feature_files = [f for f in processed_files if feature_name in f["path"].lower()]
+                aggregate_manifest["files"][feature_name] = {
+                    "primary": [f for f in feature_files if "shared" not in f["path"] and f["type"] != "test"],
+                    "shared": [f for f in feature_files if "shared" in f["path"] or f["type"] == "test"]
+                }
+                logger.debug(f"Added {len(feature_files)} files directly for {feature_name}")
         
-        # Filter empty values but preserve tech_stack
         aggregate_manifest = filter_empty(aggregate_manifest, preserve_tech_stack=True)
         
-        # Cache the aggregate manifest
+        # Cache and write to file
         cache_key = "_".join(feature_names)
-        cache_manager.set(cache_key, aggregate_manifest)
+        graph_path = PathResolver.get_graph_path(cache_key)
+        manifest_json = json.dumps(aggregate_manifest)
+        token_count = len(tokenizer.encode(manifest_json))
+        aggregate_manifest["token_count"] = token_count
+        
+        error = PathResolver.write_json_file(graph_path, aggregate_manifest)
+        if error:
+            logger.error(f"Failed to write aggregate graph to {graph_path}: {error}")
+            return {"error": f"Failed to write graph: {error}", "status": "ERROR"}
+        
+        compressed = zlib.compress(manifest_json.encode())
+        cache_manager.set(cache_key, compressed)
         
         logger.info(f"Created aggregate graph for {feature_names}: {len(processed_files)} files")
         return aggregate_manifest
-    
     # Normalize path for single feature or "all"
     is_full_codebase = path.lower() in ("all", "codebase")
     

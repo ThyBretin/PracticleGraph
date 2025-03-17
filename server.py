@@ -3,12 +3,8 @@ import logging
 from src.particle.particle_support import logger
 from src.api.add_particle import addParticle
 from src.api.create_graph import createGraph
-from src.api.load_graph import loadGraph
 from src.api.list_graph import listGraph
-from src.api.update_graph import updateGraph
-from src.api.delete_graph import deleteGraph
 from src.api.export_graph import exportGraph
-
 logger.setLevel(logging.DEBUG)
 
 def main():
@@ -16,10 +12,7 @@ def main():
     mcp.tool()(addParticle)
     mcp.tool()(createGraph)
     mcp.tool()(listGraph)
-    mcp.tool()(loadGraph)
     mcp.tool()(exportGraph)
-    mcp.tool()(updateGraph)
-    mcp.tool()(deleteGraph)
 
     logger.info("Server initialized, entering main loop")
     mcp.run()  # Stdin/stdout
