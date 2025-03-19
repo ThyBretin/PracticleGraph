@@ -14,6 +14,8 @@ def main():
     mcp = fastmcp.FastMCP("particle-graph")
     mcp.tool()(addParticle)
     mcp.tool()(createGraph)
+    # The original approach with custom schema didn't work
+    # Let's use the exportGraph function directly
     mcp.tool()(exportGraph)
     mcp.tool()(listGraph)
     mcp.tool()(particleThis)

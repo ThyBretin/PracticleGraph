@@ -1,27 +1,14 @@
-from src.particle.particle_support import logger
-
-def extract_dependencies(hooks, content, rich=True):
-    """Extract dependencies based on hooks and content."""
+def extract_dependencies(hooks, content, rich=True, particle=None):
+    """Extract dependencies from particle attributes and hooks."""
     depends_on = []
-    if not rich:
+    if not rich or not particle:
         return depends_on
-
-    hook_deps = {
-        "useRole": "components/Core/Role/hooks/useRole.js",
-        "useAuth": "components/Core/Auth/hooks/useAuth.js",
-        "useRouter": "expo-router",
-        "useSegments": "expo-router",
-        "useEventDisplayState": "components/Core/Middleware/state/eventDisplayState.js",
-        "useNavigation": "components/Core/Navigation/hooks/useNavigation.js"
-    }
-
+    
+    # Use particle's depends_on from metadata_extractor.js
+    depends_on.extend(particle["attributes"].get("depends_on", []))
+    # Add hooks as dependencies (just names, no hardcoded paths)
     for hook in hooks:
-        hook_name = hook.split(" - ")[0]  # Strip description
-        if hook_name in hook_deps:
-            depends_on.append(hook_deps[hook_name])
-
-    # Add more dependency detection if needed (e.g., imports)
-    if "expo-router" in content.lower():
-        depends_on.append("expo-router")
-
+        hook_name = hook.split(" - ")[0]
+        depends_on.append(hook_name)
+    
     return list(dict.fromkeys(depends_on))  # Dedupe
